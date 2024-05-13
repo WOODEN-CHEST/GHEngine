@@ -11,7 +11,7 @@ public class SpriteItem : ColoredItem, ICloneable
 {
     // Fields.
     [MemberNotNull(nameof(_activeAnimation))]
-    public virtual AnimationInstance ActiveAnimation
+    public virtual GHAnimationInstance ActiveAnimation
     {
         get => _activeAnimation;
         set => _activeAnimation = value ?? throw new ArgumentNullException(nameof(value));
@@ -32,24 +32,24 @@ public class SpriteItem : ColoredItem, ICloneable
 
 
     // Private fields.
-    private AnimationInstance _activeAnimation;
+    private GHAnimationInstance _activeAnimation;
     private Vector2 _size = new Vector2(50f, 50f);
 
 
     // Constructors.
-    public SpriteItem(AnimationInstance animationInstance)
+    public SpriteItem(GHAnimationInstance animationInstance)
     {
         ActiveAnimation = animationInstance;
         Size = TextureSize;
     }
 
-    public SpriteItem(AnimationInstance animationInstance, Vector2 size)
+    public SpriteItem(GHAnimationInstance animationInstance, Vector2 size)
     {
         ActiveAnimation = animationInstance;
         Size = size;
     }
 
-    public SpriteItem(AnimationInstance animationInstance, float scale)
+    public SpriteItem(GHAnimationInstance animationInstance, float scale)
     {
         ActiveAnimation = animationInstance;
         Size = TextureSize * scale;
@@ -66,7 +66,7 @@ public class SpriteItem : ColoredItem, ICloneable
         info.SpriteBatch.Draw(
             ActiveAnimation.GetFrame().Texture,
             DisplayOld.ToRealPosition(Position),
-            ActiveAnimation.TextureRegion,
+            ActiveAnimation.DrawRegion,
             CombinedMask,
             Rotation,
             ActiveAnimation.GetFrame().Origin,
@@ -77,7 +77,7 @@ public class SpriteItem : ColoredItem, ICloneable
 
     public virtual object Clone()
     {
-        return new SpriteItem((AnimationInstance)_activeAnimation.Clone())
+        return new SpriteItem((GHAnimationInstance)_activeAnimation.Clone())
         {
             Size = Size,
             Position = Position,

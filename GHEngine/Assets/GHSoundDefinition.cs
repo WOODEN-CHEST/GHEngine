@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-internal class AnimationAsset
+public class GHSoundDefinition : AssetDefinition
 {
+    // Constructors.
+    public GHSoundDefinition(string name) : base(AssetType.Sound, name) { }
 }

@@ -3,9 +3,9 @@
 public class AnimFinishEventArgs : EventArgs
 {
     // Fields.
-    public readonly FinishLocation FinishedLocation;
+    public readonly AnimationFinishLocation FinishedLocation;
 
 
     // Constructors.
-    public AnimFinishEventArgs(FinishLocation finishLocation) => FinishedLocation = finishLocation;
+    public AnimFinishEventArgs(AnimationFinishLocation finishLocation) => FinishedLocation = finishLocation;
 }

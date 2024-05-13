@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GHEngine.Assets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,9 @@ namespace GHEngine;
 
 internal class AssetLoadException : Exception
 {
-    public AssetLoadException(string path, string message) 
-        : base($"Failed to load asset \"{path}\". {message}") { }
+    public AssetLoadException(AssetDefinition definition, string message) 
+        : base($"Failed to load asset of type \"{definition.Type.TypeName}\" and name \"{definition.Name}\". {message}")
+    { }
+
+    public AssetLoadException(string message) : base(message) { }
 }

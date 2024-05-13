@@ -16,7 +16,7 @@ public class GHSound : ISound
 
 
     // Fields.
-    public float[] Samples { get; private init; }
+    public float[] Samples { get; private set; }
     public long SampleCount => Samples.Length;
     public long SingleChannelSampleCount => Samples.Length / Format.Channels;
     public WaveFormat Format { get; private init; }
@@ -34,37 +34,6 @@ public class GHSound : ISound
                 $"Count: {samples.Length}, Format channel count: {format.Channels}", nameof(samples));
         }
         Duration = TimeSpan.FromSeconds((double)samples.Length / (double)format.Channels / (double)format.SampleRate);
-
-        //AudioFileReader Reader = null!;
-        //ISampleProvider Sampler;
-        //try
-        //{
-        //    Reader = new(filePath);
-        //    Sampler = Reader.ToSampleProvider();
-        //}
-        //catch (IOException e)
-        //{
-        //    Reader?.Dispose();
-        //    throw new AssetLoadException(filePath, $"Couldn't read audio file. {e}");
-        //}
-
-        //if (!AudioEngine.ActiveEngine.WaveFormat.Equals(Sampler.WaveFormat))
-        //{
-        //    throw new AssetLoadException(filePath,
-        //        $"Wrong wave format: {Sampler.WaveFormat.Encoding} " +
-        //        $"(SampleRate:{Sampler.WaveFormat.SampleRate} Channels:{Sampler.WaveFormat.Channels})");
-        //}
-
-        //try
-        //{
-        //    Samples = new float[(int)Math.Ceiling(Reader.TotalTime.TotalSeconds * AudioEngine.ActiveEngine.SamplesPerSecond)];
-        //    SampleCount = Sampler.Read(Samples, 0, Samples.Length);
-        //    Length = new(0, 0, 0, 0, (int)((double)SampleCount * 1000d / (double)AudioEngine.ActiveEngine.SamplesPerSecond));
-        //}
-        //catch (IOException e)
-        //{
-        //    throw new AssetLoadException(filePath, $"Couldn't read audio file. {e}");
-        //}
     }
 
 
@@ -72,5 +41,10 @@ public class GHSound : ISound
     public ISoundInstance CreateInstance()
     {
         return new GHSoundInstance(this);
+    }
+
+    public void Dispose()
+    {
+        Samples = null!;
     }
 }

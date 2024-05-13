@@ -41,9 +41,9 @@ public class SpriteButton : SpriteItem, ITimeUpdatable
 
 
     // Constructors.
-    public SpriteButton(AnimationInstance animationInstance) : base(animationInstance) { }
+    public SpriteButton(GHAnimationInstance animationInstance) : base(animationInstance) { }
 
-    public SpriteButton(AnimationInstance animationInstance, Vector2 size) : base(animationInstance, size) { }
+    public SpriteButton(GHAnimationInstance animationInstance, Vector2 size) : base(animationInstance, size) { }
 
 
     // Methods.

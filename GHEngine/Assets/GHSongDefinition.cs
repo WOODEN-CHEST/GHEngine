@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class ShaderDefinition : AssetDefinition
+public class GHSongDefinition : AssetDefinition
 {
     // Constructors.
-    public ShaderDefinition(string name) : base(AssetType.Shader, name) { }
+    public GHSongDefinition(string name) : base(AssetType.Song, name) { }
 }

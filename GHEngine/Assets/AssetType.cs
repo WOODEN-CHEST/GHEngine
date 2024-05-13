@@ -10,23 +10,25 @@ namespace GHEngine.Assets;
 public struct AssetType
 {
     // Static fields.
-    public static AssetType Animation { get; } = new("animation");
-    public static AssetType Sound { get; } = new("sound");
-    public static AssetType Song { get; } = new("song");
-    public static AssetType Shader { get; } = new("shader");
-    public static AssetType Font { get; } = new("font");
-    public static AssetType Language { get; } = new("language");
+    public static AssetType Animation { get; } = new("animation", "animations");
+    public static AssetType Sound { get; } = new("sound", "sounds");
+    public static AssetType Song { get; } = new("song", "songs");
+    public static AssetType Shader { get; } = new("shader", "shaders");
+    public static AssetType Font { get; } = new("font", "fonts");
+    public static AssetType Language { get; } = new("language", "languages");
 
 
     
     // Fields.
     public string TypeName { get; private init; }
+    public string RootPathName { get; private init; }
 
 
     // Constructors.
-    public AssetType(string typeName)
+    public AssetType(string typeName, string rootPathName)
     {
         TypeName = typeName ?? throw new ArgumentNullException(nameof(typeName));
+        RootPathName = rootPathName ?? throw new ArgumentNullException(nameof(rootPathName));
     }
 
 
@@ -52,7 +54,7 @@ public struct AssetType
 
 
     // Operators.
-    public static implicit operator string(AssetType type) => type.TypeName;
+    public static explicit operator string(AssetType type) => type.TypeName;
 
     public static bool operator ==(AssetType a, AssetType b)
     {

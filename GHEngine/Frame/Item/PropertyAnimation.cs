@@ -28,7 +28,7 @@ public class PropertyAnimation : ITimeUpdatable
         AnimationTime += time.PassedTimeSeconds * Speed;
         if (AnimationTime > KeyFrames.Duration)
         {
-            AnimationFinish?.Invoke(this, new(FinishLocation.End));
+            AnimationFinish?.Invoke(this, new(AnimationFinishLocation.End));
             if (IsLooped)
             {
                 AnimationTime = 0f;
@@ -40,7 +40,7 @@ public class PropertyAnimation : ITimeUpdatable
         }
         else if (AnimationTime < 0f)
         {
-            AnimationFinish?.Invoke(this, new(FinishLocation.Start));
+            AnimationFinish?.Invoke(this, new(AnimationFinishLocation.Start));
             if (IsLooped)
             {
                 AnimationTime = KeyFrames.Duration;

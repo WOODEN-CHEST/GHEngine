@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class SoundDefinition : AssetDefinition
+public class GHShaderDefinition : AssetDefinition
 {
     // Constructors.
-    public SoundDefinition(string name) : base(AssetType.Sound, name) { }
+    public GHShaderDefinition(string name) : base(AssetType.Shader, name) { }
 }

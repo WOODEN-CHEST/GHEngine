@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Audio;
 
-public interface ISound
+public interface ISound : IDisposable
 {
     // Fields.
     WaveFormat Format { get; }

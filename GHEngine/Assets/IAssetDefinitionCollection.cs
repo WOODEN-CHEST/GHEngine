@@ -8,9 +8,9 @@ namespace GHEngine.Assets;
 
 public interface IAssetDefinitionCollection
 {
-    AssetDefinition? Get(AssetType type, string name);
-
     void Add(AssetDefinition definition);
+
+    AssetDefinition? Get(AssetType type, string name);
 
     AssetDefinition[] GetAll();
 

@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Translatable;
 
-public class LanguageFileParser : ILanguageReader
+public class GHLanguageReader : ILanguageReader
 {
     // Static fields.
     public const char KEY_VALUE_SEPARATOR = '=';
 
 
     // Constructors.
-    public LanguageFileParser() { }
+    public GHLanguageReader() { }
 
 
     // Private methods.

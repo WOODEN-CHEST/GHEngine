@@ -1,6 +1,6 @@
 ﻿namespace GHEngine.Frame.Animation;
 
-public enum FinishLocation
+public enum AnimationFinishLocation
 {
     Start,
     End

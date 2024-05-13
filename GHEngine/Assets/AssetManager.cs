@@ -32,10 +32,9 @@ public static class AssetManager
 
 
     // Private fields.
-    private const char WRONG_PATH_SEPARATOR = '\\';
-    private const char CORRECT_PATH_SEPARATOR = '/';
 
-    private static readonly Dictionary<string, GameAsset> s_assets = new();
+
+    private static readonly Dictionary<string, GhGameAsset> s_assets = new();
 
 
     // Internal static methods.
@@ -68,7 +67,7 @@ public static class AssetManager
 
     public static void FreeAllUserAssets(IGameFrame user)
     {
-        foreach (GameAsset Asset in s_assets.Values)
+        foreach (GhGameAsset Asset in s_assets.Values)
         {
             Asset.RemoveUser(user, GHEngine.Game.Content);
         }
@@ -104,7 +103,7 @@ public static class AssetManager
     {
         relativePath = FormatPath(relativePath);
 
-        GameAsset AssetEntry;
+        GhGameAsset AssetEntry;
 
         if (!s_assets.ContainsKey(relativePath))
         {

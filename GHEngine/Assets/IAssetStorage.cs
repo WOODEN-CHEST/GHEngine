@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class SongDefinition : AssetDefinition
+public interface IAssetStorage : IAssetProvider
 {
-    // Constructors.
-    public SongDefinition(string name) : base(AssetType.Song, name) { }
+    // Fields.
+    public IAssetDefinitionCollection Definitions { get; set; }
+    public IAsset
 }

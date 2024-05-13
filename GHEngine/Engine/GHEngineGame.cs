@@ -3,6 +3,7 @@ using GHEngine.Frame;
 using GHEngine.IO;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Input;
 
 
