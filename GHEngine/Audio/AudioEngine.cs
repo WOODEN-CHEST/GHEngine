@@ -1,5 +1,7 @@
-﻿using NAudio.CoreAudioApi;
+﻿using GHEngine.Collections;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -8,61 +10,108 @@ using System.Runtime.CompilerServices;
 namespace GHEngine.Audio;
 
 
-public class AudioEngine : IDisposable, ISampleProvider
+public class AudioEngine : IAudioEngine
 {
-    // Static fields.
-    public const int MAX_SOUNDS = 128;
-    public const int AUDIO_LATENCY_MS = 30;
-    public static AudioEngine ActiveEngine
+    // Fields.
+    public WaveFormat WaveFormat => _format;
+    public int AudioLatency { get; private init; }
+    public int MaxSounds
     {
-        get => s_defaultEngine;
+        get
+        {
+            lock (this)
+            {
+                return _maxSounds;
+            }
+        }
         set
         {
-            s_defaultEngine?.Dispose();
-            s_defaultEngine = value ?? throw new ArgumentNullException(nameof(value));
+            lock (this)
+            {
+                _maxSounds = value;
+            }
         }
     }
 
+    public ISoundInstance[] Sounds
+    {
+        get
+        {
+            lock (this)
+            {
+                return _sounds.ToArray();
+            }
+        }
+    }
 
+    public float Volume
+    {
+        get
+        {
+            lock (this)
+            {
+                return _volume;
+            }
+        }
+        set
+        {
+            lock (this)
+            {
+                _volume = Math.Clamp(value, 0f, 1f);
+            }
+        }
+    }
 
-    // Private static fields.
-    private static AudioEngine s_defaultEngine;
-
-
-
-    // Fields.
-    public WaveFormat WaveFormat => _format;
+    public int SoundCount
+    {
+        get
+        {
+            lock (this)
+            {
+                return _sounds.Count;
+            }
+        }
+    }
 
     public TimeSpan ExecutionTime
     {
-        get { lock (this) { return _executionTime; } }
+        get 
+        {
+            lock (this)
+            {
+                return _executionTime;
+            }
+        }
     }
 
     public int SamplesPerSecond => WaveFormat.SampleRate * WaveFormat.Channels;
 
 
     // Private static fields.
-    private WaveFormat _format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
-    private WasapiOut _outputDevice;
-    private List<SoundInstance> _sounds = new(MAX_SOUNDS);
-    private ConcurrentQueue<SoundInstance> _soundsToAdd = new();
-    private ConcurrentQueue<SoundInstance> _soundsToRemove = new();
+    private readonly WaveFormat _format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+    private readonly WasapiOut _outputDevice;
+
+    private float _volume = 1f;
+    private int _maxSounds = 128;
+    private readonly DiscreteTimeList<ISoundInstance> _sounds = new();
     private float[] _soundBuffer;
 
     private TimeSpan _executionTime;
-    private static readonly Stopwatch _executionMeasurer = new();
+    private readonly Stopwatch _executionMeasurer = new();
 
 
 
     // Constructors.
-    internal AudioEngine()
+    internal AudioEngine(int targetAudioLatency)
     {
+        AudioLatency = targetAudioLatency;
         try
         {
-            _outputDevice = new(AudioClientShareMode.Shared, true, AUDIO_LATENCY_MS);
+            _outputDevice = new(AudioClientShareMode.Shared, true, targetAudioLatency);
 
             _outputDevice.Init(this);
             _outputDevice.Play();
+            _soundBuffer = Array.Empty<float>();
         }
         catch (Exception e)
         {
@@ -71,25 +120,7 @@ public class AudioEngine : IDisposable, ISampleProvider
     }
 
 
-    // Methods.
-    public void StopAllSounds()
-    {
-        foreach (SoundInstance SoundInst in _sounds)
-        {
-            SoundInst.Stop();
-        }
-    }
-
-
-
-    // Internal methods.
-    internal void AddSound(SoundInstance sound) => _soundsToAdd.Enqueue(sound);
-
-    internal void RemoveSound(SoundInstance sound) => _soundsToRemove.Enqueue(sound);
-
-
     // Private methods.
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void EnsureBuffer(int requestedSize)
     {
         if ((_soundBuffer == null) || (requestedSize > _soundBuffer.Length))
@@ -98,7 +129,6 @@ public class AudioEngine : IDisposable, ISampleProvider
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int FillBufferWithSilence(float[] buffer, int offset, int count)
     {
         for (int i = offset; i < (offset + count); i++)
@@ -108,69 +138,84 @@ public class AudioEngine : IDisposable, ISampleProvider
         return count;
     }
 
-    private void AddQueuedSounds()
+    private void ReadSounds(float volume, float[] buffer, int offset, int count)
     {
-        while (_soundsToAdd.TryDequeue(out var Sound))
+        if (_sounds.Count == 0)
         {
-            _sounds.Add(Sound);
+            FillBufferWithSilence(buffer, offset, count);
         }
-    }
 
-    private void RemoveQueuedSounds()
-    {
-        while (_soundsToRemove.TryDequeue(out var Sound))
+        // Overwrite buffer data with the first sound.
+        _sounds[0].GetSamples(_soundBuffer, count);
+        for (int i = offset, Source = 0; i < (offset + count); i++, Source++)
         {
-            _sounds.Remove(Sound);
+            buffer[i] = _soundBuffer[Source] * volume;
+        }
+
+        // Add remaining sounds.
+        for (int SoundIndex = 1; SoundIndex < _sounds.Count; SoundIndex++)
+        {
+            _sounds[SoundIndex].GetSamples(_soundBuffer, count);
+            for (int Target = offset, Source = 0; Target < (offset + count); Target++, Source++)
+            {
+                buffer[Target] += _soundBuffer[Source] * volume;
+            }
         }
     }
 
 
     // Inherited methods.
+    public void AddSoundInstance(ISoundInstance sound)
+    {
+        lock (_sounds)
+        {
+            _sounds.Add(sound);
+        }
+    }
+
+    public void RemoveSoundInstance(ISoundInstance sound)
+    {
+        lock (_sounds)
+        {
+            _sounds.Remove(sound);
+        }
+    }
+
+    public void ClearSounds()
+    {
+        lock (_sounds)
+        {
+            _sounds.Clear();
+        }
+    }
+
     public void Dispose()
     {
-        _outputDevice?.Dispose();
+        lock (this)
+        {
+            _outputDevice?.Dispose();
+        }
     }
 
     public int Read(float[] buffer, int offset, int count)
     {
         try
         {
-            // Ensure buffer capacity, add queued sounds.
             _executionMeasurer.Start();
+
             EnsureBuffer(count);
-            AddQueuedSounds();
 
-            // Early exit (fill with silence).
-            if (_sounds.Count == 0)
+            float TargetVolume = Volume;
+            lock (_sounds)
             {
-                int Count = FillBufferWithSilence(buffer, offset, count);
-                _executionMeasurer.Stop();
-                _executionTime = _executionMeasurer.Elapsed;
-                return Count;
+                _sounds.ApplyChanges(); 
             }
-
-            // Overwrite buffer data with the first sound.
-            _sounds[0].GetSamples(_soundBuffer, count);
-            for (int i = offset, Source = 0; i < (offset + count); i++, Source++)
-            {
-                buffer[i] = _soundBuffer[Source];
-            }
-
-            // Add remaining sounds.
-            for (int SoundIndex = 1; SoundIndex < _sounds.Count; SoundIndex++)
-            {
-                _sounds[SoundIndex].GetSamples(_soundBuffer, count);
-                for (int Target = offset, Source = 0; Target < (offset + count); Target++, Source++)
-                {
-                    buffer[Target] += _soundBuffer[Source];
-                }
-            }
-
-            // Remove queued sounds.
-            RemoveQueuedSounds();
-
+            ReadSounds(TargetVolume, buffer, offset, count);
             _executionMeasurer.Stop();
-            _executionTime = _executionMeasurer.Elapsed;
+            lock (this)
+            {
+                _executionTime = _executionMeasurer.Elapsed;
+            }
             return count;
         }
         catch (Exception e)

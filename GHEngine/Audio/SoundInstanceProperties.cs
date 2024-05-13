@@ -10,6 +10,7 @@ namespace Tests.Audio;
 internal struct SoundInstanceProperties
 {
     // Fields.
+    internal double Index { get; set; }
     internal SoundInstanceState State { get; set; }
     internal bool IsLooped { get; set; }
     internal float Volume { get; set; }
@@ -24,9 +25,9 @@ internal struct SoundInstanceProperties
     {
         State = SoundInstanceState.Stopped;
         IsLooped = false;
-        Volume = SoundInstance.VOLUME_MAX;
-        Pan = SoundInstance.PAN_MIDDLE;
-        Speed = SoundInstance.SPEED_DEFAULT;
+        Volume = GHSoundInstance.VOLUME_MAX;
+        Pan = GHSoundInstance.PAN_MIDDLE;
+        Speed = GHSoundInstance.SPEED_DEFAULT;
         LowPassCutoffFrequency = null;
         HighPassCutoffFrequency = null;
     }

@@ -82,9 +82,9 @@ public static class AssetManager
         return (Texture2D)GetAsset(user, $"{DIR_TEXTURES}{CORRECT_PATH_SEPARATOR}{relativePath}", AssetType.Texture);
     }
 
-    public static Sound GetSoundEffect(IGameFrame? user, string relativePath)
+    public static GHSound GetSoundEffect(IGameFrame? user, string relativePath)
     {
-        return (Sound)GetAsset(user, 
+        return (GHSound)GetAsset(user, 
             Path.ChangeExtension($"{DIR_SOUNDS}{CORRECT_PATH_SEPARATOR}{relativePath}", EXTENSION_AUDIO_FILE), AssetType.Sound);
     }
 

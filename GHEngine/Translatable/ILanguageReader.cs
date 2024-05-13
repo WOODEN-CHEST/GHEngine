@@ -8,7 +8,7 @@ namespace GHEngine.Translatable;
 
 public interface ILanguageReader
 {
-    public void Read(ILanguage language, string path);
+    public void Read(ILanguage language, string filePath);
 
     public void Read(ILanguage language, Stream dataStream);
 }
