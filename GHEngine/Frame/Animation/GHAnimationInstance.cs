@@ -6,7 +6,7 @@ namespace GHEngine.Frame.Animation;
 public sealed class GHAnimationInstance : IAnimationInstance
 {
     // Fields.
-    public ISpriteAnimation Animation { get; private init; }
+    public ISpriteAnimation Source { get; private init; }
     public Rectangle? DrawRegion { get; set; } = null;
     public bool IsLooped { get; set; }
 
@@ -49,8 +49,10 @@ public sealed class GHAnimationInstance : IAnimationInstance
     public int FrameIndex
     {
         get => _frameIndex;
-        set => _frameIndex = Math.Clamp(value, 0, Animation.MaxFrameIndex);
+        set => _frameIndex = Math.Clamp(value, 0, Source.MaxFrameIndex);
     }
+
+    public Texture2D CurrentFrame => Source[_frameIndex];
 
 
 
@@ -71,7 +73,7 @@ public sealed class GHAnimationInstance : IAnimationInstance
     // Constructors.
     internal GHAnimationInstance(ISpriteAnimation animation)
     {
-        Animation = animation ?? throw new ArgumentNullException(nameof(animation));
+        Source = animation ?? throw new ArgumentNullException(nameof(animation));
         Reset();
     }
 
@@ -79,7 +81,7 @@ public sealed class GHAnimationInstance : IAnimationInstance
     // Private methods.
     private void UpdateShouldAnimate()
     {
-        _shouldAnimate = (_fps != 0d) && (_frameStep != 0) && (Animation.MaxFrameIndex != 0) && IsAnimating;
+        _shouldAnimate = (_fps != 0d) && (_frameStep != 0) && (Source.MaxFrameIndex != 0) && IsAnimating;
     }
 
 
@@ -93,7 +95,7 @@ public sealed class GHAnimationInstance : IAnimationInstance
         }
         else
         {
-            _frameIndex = Math.Clamp(_frameIndex, 0, Animation.MaxFrameIndex);
+            _frameIndex = Math.Clamp(_frameIndex, 0, Source.MaxFrameIndex);
             FrameStep = 0;
             UpdateShouldAnimate();
         }
@@ -103,28 +105,26 @@ public sealed class GHAnimationInstance : IAnimationInstance
     {
         _frameIndex += FrameStep;
 
-        if (_frameIndex > Animation.MaxFrameIndex)
+        if (_frameIndex > Source.MaxFrameIndex)
         {
             AnimationWrap(0, AnimationFinishLocation.End);
         }
         else if (_frameIndex < 0)
         {
-            AnimationWrap(Animation.MaxFrameIndex, AnimationFinishLocation.Start);
+            AnimationWrap(Source.MaxFrameIndex, AnimationFinishLocation.Start);
         }
     }
 
 
     // Inherited methods.
-    public Texture2D GetCurrentFrame() => Animation.Frames[_frameIndex];
-
     public void Reset()
     {
         _secondsSinceFrameSwitch = 0;
-        FPS = Animation.DefaultFPS;
-        IsLooped = Animation.DefaultIsLooped;
-        FrameStep = Animation.DefaultFrameStep;
-        DrawRegion = Animation.DefaultDrawRegion;
-        IsAnimating = Animation.DefaultIsAnimating;
+        FPS = Source.DefaultFPS;
+        IsLooped = Source.DefaultIsLooped;
+        FrameStep = Source.DefaultFrameStep;
+        DrawRegion = Source.DefaultDrawRegion;
+        IsAnimating = Source.DefaultIsAnimating;
     }
 
     public void Update(IProgramTime time)
@@ -144,7 +144,7 @@ public sealed class GHAnimationInstance : IAnimationInstance
 
     public object Clone()
     {
-        return new GHAnimationInstance(Animation)
+        return new GHAnimationInstance(Source)
         {
             IsLooped = IsLooped,
             DrawRegion = DrawRegion,

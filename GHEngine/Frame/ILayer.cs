@@ -1,9 +1,9 @@
 ﻿using GHEngine.Frame.Item;
-
+using Microsoft.Xna.Framework.Graphics;
 
 namespace GHEngine.Frame;
 
-public interface ILayer : IColorMaskable, IDrawableItem
+public interface ILayer : IColorMaskable, IShadered, IRenderableItem
 {
     // Static fields.
     public const float DEFAULT_Z_INDEX = 1.0f;
@@ -11,16 +11,16 @@ public interface ILayer : IColorMaskable, IDrawableItem
 
     // Properties.
     string Name { get; }
-
     public int DrawableItemCount { get; }
+    public IRenderableItem[] Items { get; }
 
 
     // Methods.
-    public void AddDrawableItem(IDrawableItem item);
+    public void AddItem(IRenderableItem item);
 
-    public void AddDrawableItem(IDrawableItem item, float zindex);
+    public void AddItem(IRenderableItem item, float zIndex);
 
-    public void RemoveDrawableItem(IDrawableItem item);
+    public void RemoveItem(IRenderableItem item);
 
-    public void ClearDrawableItems();
+    public void ClearItems();
 }

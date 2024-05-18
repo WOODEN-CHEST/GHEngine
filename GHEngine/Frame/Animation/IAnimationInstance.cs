@@ -11,19 +11,18 @@ namespace GHEngine.Frame.Animation;
 public interface IAnimationInstance : ITimeUpdatable, ICloneable
 {
     // Fields.
-    ISpriteAnimation Animation { get; }
+    ISpriteAnimation Source { get; }
     Rectangle? DrawRegion { get; set; }
     public bool IsAnimating { get; set; }
     double FPS { get; set; }
     int FrameStep { get; set; }
     bool IsLooped { get; set; }
     int FrameIndex { get; set; }
+    public Texture2D CurrentFrame { get; }
 
     public event EventHandler<AnimFinishEventArgs>? AnimationFinished;
 
 
     // Methods.
-    public Texture2D GetCurrentFrame();
-
     public void Reset();
 }

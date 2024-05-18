@@ -32,4 +32,8 @@ public interface IDisplay
     Vector2 ToNormalizedPosition(Vector2 windowPosition);
 
     Vector2 ToWindowPosition(Vector2 normalizedPosition);
+
+    Vector2 ToNormalizedSize(Vector2 windowSize);
+
+    Vector2 ToWindowSize(Vector2 normalizedSize);
 }

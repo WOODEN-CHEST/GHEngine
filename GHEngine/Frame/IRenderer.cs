@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace GHEngine.Frame;
 
-public interface IRenderer
+public interface IRenderer : IDisposable
 {
     public void DrawSprite(Texture2D texture,
         Vector2 position,
@@ -11,9 +11,9 @@ public interface IRenderer
         Color mask,
         float rotation,
         Vector2 origin,
-        Vector2 scale,
+        Vector2 size,
         SpriteEffects effects,
-        SpriteEffect shader);
+        SpriteEffect? shader);
 
     public void DrawString(SpriteFont font,
         string text,
@@ -21,16 +21,20 @@ public interface IRenderer
         Color mask,
         float rotation,
         Vector2 origin,
-        Vector2 scale,
-        SpriteEffect shader);
+        Vector2 size,
+        SpriteEffects effects,
+        SpriteEffect? shader);
 
     public void DrawLine(Color color,
         Vector2 startPoint,
         Vector2 endPoint,
-        float width);
+        float width,
+        SpriteEffect? shader);
 
     public void DrawLine(Color color,
         Vector2 startPoint,
         float rotation,
-        float width);
+        float width,
+        float length,
+        SpriteEffect? shader);
 }

@@ -11,12 +11,16 @@ public interface IUserInput
     int KeysDownCountPrevious { get; }
     Vector2 VirtualMousePositionCurrent { get; }
     Vector2 VirtualMousePositionPrevious { get; }
-    Vector2 ActualMousePositionCurrent { get; }
+    Vector2 ActualMousePositionCurrent { get; set; }
     Vector2 ActualMousePositionPrevious { get; }
     int MouseButtonsPressedCountCurrent { get; }
     int MouseButtonsPressedCountPrevious { get; }
     bool IsWindowFocused { get; }
     bool IsAltF4Allowed { get; set; }
+    bool IsMouseVisible { get; set; }
+    MouseCursor CurrentCursor { set; }
+
+
     event EventHandler<TextInputEventArgs>? TextInput;
     event EventHandler<FileDropEventArgs>? FileDrop;
 

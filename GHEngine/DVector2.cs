@@ -12,6 +12,8 @@ public struct DVector2
     // Fields.
     public double X { get; set; }
     public double Y { get; set; }
+    public readonly double Length => Math.Sqrt((X* X) + (Y* Y));
+    public readonly double LengthSquared => (X* X) + (Y* Y);
 
 
     // Constructors.
@@ -48,7 +50,7 @@ public struct DVector2
 
     public static DVector2 Normalize(DVector2 vector)
     {
-        return vector / vector.Length();
+        return vector / vector.Length;
     }
 
     public static DVector2 NormalizeOrDefault(DVector2 vector2, DVector2 defaultVector)
@@ -84,14 +86,14 @@ public struct DVector2
     // Methods.
     public void Normalize()
     {
-        double VectorLength = Length();
+        double VectorLength = Length;
         X /= VectorLength;
         Y /= VectorLength;
     }
 
     public void NormalizeOrDefault(DVector2 defaultVector)
     {
-        if ((LengthSquared() == 0f) || (LengthSquared() == -0f))
+        if ((LengthSquared == 0f) || (LengthSquared == -0f))
         {
             X = defaultVector.X;
             Y = defaultVector.Y;
@@ -102,19 +104,9 @@ public struct DVector2
         }
     }
 
-    public double Length()
-    {
-        return Math.Sqrt((X * X) + (Y * Y));
-    }
-
-    public double LengthSquared()
-    {
-        return (X * X) + (Y * Y);
-    }
-
 
     // Inherited methods.
-    public override bool Equals(object? obj)
+    public readonly override bool Equals(object? obj)
     {
         if (obj is DVector2 DVector)
         {
@@ -123,12 +115,12 @@ public struct DVector2
         return false;
     }
 
-    public override int GetHashCode()
+    public readonly override int GetHashCode()
     {
         return X.GetHashCode() + Y.GetHashCode();
     }
 
-    public override string ToString()
+    public readonly override string ToString()
     {
         return $"({X}; {Y})";
     }

@@ -62,7 +62,7 @@ public static class GHMath
 
     public static double CosineBetweenVectors(DVector2 vector1, DVector2 vector2)
     {
-        return DVector2.Dot(vector1, vector2) / (vector1.Length() * vector2.Length());
+        return DVector2.Dot(vector1, vector2) / (vector1.Length * vector2.Length);
     }
 
     public static Vector2 NormalizeOrDefault(Vector2 vector, Vector2 defaultVector)
@@ -76,7 +76,7 @@ public static class GHMath
 
     public static DVector2 NormalizeOrDefault(DVector2 vector, DVector2 defaultVector)
     {
-        if ((vector.LengthSquared() == 0f) || (vector.LengthSquared() == -0f))
+        if ((vector.LengthSquared == 0f) || (vector.LengthSquared == -0f))
         {
             return defaultVector;
         }
@@ -92,4 +92,37 @@ public static class GHMath
         return DVector3.Normalize(vector);
     }
 
+    public static bool IsPointInArea(Vector2 point, Vector2 areaCorner1, Vector2 areaCorner2, float areaRotation)
+    {
+        float MinX = Math.Min(areaCorner1.X, areaCorner2.X);
+        float MinY = Math.Min(areaCorner1.Y, areaCorner2.Y);
+        float MaxX = Math.Max(areaCorner1.X, areaCorner2.X);
+        float MaxY = Math.Max(areaCorner1.Y, areaCorner2.Y);
+
+        if (areaRotation == 0f)
+        {
+            return (MinX <= point.X) && (point.X <= MaxX) && (MinY <= point.Y) && (point.Y <= MaxY);
+        }
+
+        Vector2 MiddleAreaPoint = new(MinX + ((MaxX - MinX) * 0.5f), MinY + ((MaxY - MinY) * 0.5f));
+        Vector2 RotatedPoint = MiddleAreaPoint + Vector2.Transform(point - MiddleAreaPoint, Matrix.CreateRotationZ(-areaRotation));
+        return (MinX <= RotatedPoint.X) && (RotatedPoint.X <= MaxX) && (MinY <= RotatedPoint.Y) && (RotatedPoint.Y <= MaxY);
+    }
+
+    public static bool IsPointInArea(DVector2 point, DVector2 areaCorner1, DVector2 areaCorner2, float areaRotation)
+    {
+        double MinX = Math.Min(areaCorner1.X, areaCorner2.X);
+        double MinY = Math.Min(areaCorner1.Y, areaCorner2.Y);
+        double MaxX = Math.Max(areaCorner1.X, areaCorner2.X);
+        double MaxY = Math.Max(areaCorner1.Y, areaCorner2.Y);
+
+        if (areaRotation == 0d)
+        {
+            return (MinX <= point.X) && (point.X <= MaxX) && (MinY <= point.Y) && (point.Y <= MaxY);
+        }
+
+        DVector2 MiddleAreaPoint = new(MinX + ((MaxX - MinX) * 0.5d), MinY + ((MaxY - MinY) * 0.5d));
+        DVector2 RotatedPoint = MiddleAreaPoint + DVector2.Rotate(point - MiddleAreaPoint, -areaRotation);
+        return (MinX <= RotatedPoint.X) && (RotatedPoint.X <= MaxX) && (MinY <= RotatedPoint.Y) && (RotatedPoint.Y <= MaxY);
+    }
 }

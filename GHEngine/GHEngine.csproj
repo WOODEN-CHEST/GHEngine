@@ -9,6 +9,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Frame\Item\TextA\**" />
+    <EmbeddedResource Remove="Frame\Item\TextA\**" />
+    <None Remove="Frame\Item\TextA\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Frame\Item\KeyframeCollection.cs" />
+    <Compile Remove="Frame\Item\PropertyAnimation.cs" />
+    <Compile Remove="Frame\Item\PropertyAnimManager.cs" />
+    <Compile Remove="Frame\Item\PropertyKeyframe.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>

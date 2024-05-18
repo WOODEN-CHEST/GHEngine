@@ -13,7 +13,17 @@ public class UserInput : IUserInput
     public int KeysDownCountPrevious => _keysDownCount.Previous;
     public Vector2 VirtualMousePositionCurrent => _virtualMousePosition.Current;
     public Vector2 VirtualMousePositionPrevious => _virtualMousePosition.Previous;
-    public Vector2 ActualMousePositionCurrent => _actualMousePosition.Current;
+
+    public Vector2 ActualMousePositionCurrent
+    {
+        get => _actualMousePosition.Current;
+        set
+        {
+            Mouse.SetPosition((int)value.X, (int)value.Y);
+            _mouseState.SetValue(Mouse.GetState());
+        }
+    }
+
     public Vector2 ActualMousePositionPrevious => _actualMousePosition.Previous;
     public int MouseButtonsPressedCountCurrent => _mouseButtonsPressedCount.Current;
     public int MouseButtonsPressedCountPrevious => _mouseButtonsPressedCount.Previous;
@@ -23,6 +33,17 @@ public class UserInput : IUserInput
     {
         get => _window.AllowAltF4;
         set => _window.AllowAltF4 = value;
+    }
+
+    public bool IsMouseVisible
+    {
+        get => _game.IsMouseVisible;
+        set => _game.IsMouseVisible = value;
+    }
+
+    public MouseCursor CurrentCursor
+    {
+        set => Mouse.SetCursor(value);
     }
 
     public event EventHandler<TextInputEventArgs>? TextInput;

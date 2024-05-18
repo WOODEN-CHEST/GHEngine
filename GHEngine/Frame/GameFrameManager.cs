@@ -68,7 +68,7 @@ public static class GameFrameManager
 
         activeFrame.Load();
 
-        EnqueueAction(() => { activeFrame.OnStart(); });
+        EnqueueAction(() => { activeFrame.Start(); });
 
         DisplayOld.DisplayChanged += OnDisplayChangedEvent;
         s_spriteBatch = new(DisplayOld.GraphicsManager.GraphicsDevice);
@@ -142,12 +142,12 @@ public static class GameFrameManager
             }
         }
 
-        ActiveFrame.OnEnd();
+        ActiveFrame.End();
         IGameFrame OldFrame = ActiveFrame;
         ActiveFrame = NextFrame;
         NextFrame = null;
 
-        ActiveFrame.OnStart();
+        ActiveFrame.Start();
         Task.Run(() =>
         {
             try

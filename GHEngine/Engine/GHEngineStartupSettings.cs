@@ -1,11 +1,9 @@
-﻿using GHEngine.Frame;
-using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GHEngine.Assets;
+using GHEngine.Audio;
+using GHEngine.Frame;
+using GHEngine.IO;
+using GHEngine.Logging;
+using GHEngine.Screen;
 
 
 namespace GHEngine.Engine;
@@ -14,41 +12,49 @@ namespace GHEngine.Engine;
 public record class GHEngineStartupSettings
 {
     // Fields.
-    public string InternalName { get; set; }
-    public string GameName { get; set; }
+    public string InternalName { get; init; } = "Unnamed_Game";
+    public string GameName { get; init; } = "Game";
 
-    public string GameDataRootDirectory { get; set; }
-    public string AssetBasePath { get; set; }
-    public string? AssetExtraPath { get; set; }
+    public string GameDataRootDirectory
+    {
+        get => _gameDataRootDirectory
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), InternalName);
+        set => _gameDataRootDirectory = value;
+    }
 
-    public Vector2 VirtualSize { get; set; }
-    public Vector2? WindowSize { get; set; }
-    public bool IsFullScreen { get; set; }
-    public bool IsMouseVisible { get; set; }
-    public bool AllowAltF4 { get; set; }
-    public bool AllowUserResizing { get; set; }
+    public IAssetProvider? AssetProvider { get; init; } = null;
+    public IAssetLoader? AssetLoader { get; init; } = null;
+    public IAssetDefinitionReader? AssetDefinitionReader { get; init; } = null;
+    public string AssetDefinitionDirectory { get; init; }
 
-    public IGameFrame StartupFrame { get; set; }
+    public float AspectRatio { get; init; } = IDisplay.ASPECT_RATIO_STANDART;
+    public IDisplay? Display { get; init; } = null;
+    public bool AllowUserResizing { get; set; } = true;
+    public bool IsFullScreen { get; set; } = true;
+
+    public Func<GHEngineOld, IGameFrame> StartupFrameProvider { get; set; }
+
+    public IUserInput? UserInput { get; init; } = null;
+    public bool IsMouseVisible { get; set; } = true;
+    public bool AllowAltF4 { get; set; } = true;
+
+    public ILogger? Logger { get; init; } = null;
+    public ILogArchiver? LogArchiver { get; init; } = null;
+    public string LogPath { get; init; } = "logs/latest.log";
+    public string LogArchiveDirectory { get; init; } = "logs/old";
+
+    public IAudioEngine? AudioEngine { get; init; } = null;
+    
+
+
+    // Private fields.
+    private string? _gameDataRootDirectory;
 
 
     // Constructors.
-    public GHEngineStartupSettings()
+    public GHEngineStartupSettings(Func<GHEngineOld, IGameFrame> startingFrameProvider)
     {
-        InternalName = "unnamed_game";
-        GameName = "Unnamed Game";
-
-        GameDataRootDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        AssetBasePath = Path.Combine(
-            Directory.GetParent(Assembly.GetExecutingAssembly().Location)!.FullName, "assets");
-        AssetExtraPath = null;
-
-        VirtualSize = new(1920f, 1080f);
-        WindowSize = null;
-        IsFullScreen = false;
-        IsMouseVisible = true;
-        AllowAltF4 = true;
-        AllowUserResizing = true;
-
-        StartupFrame = new GameFrame("Default Startup Frame");
+        StartupFrameProvider = startingFrameProvider ?? throw new ArgumentNullException(nameof(startingFrameProvider));
+        AssetDefinitionDirectory = Path.Combine(Environment.CurrentDirectory, "assets");
     }
 }
