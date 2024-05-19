@@ -14,12 +14,12 @@ public interface ISoundInstance
     ISound Sound { get; }
     SoundInstanceState State { get; set; }
     TimeSpan CurrentTime { get; set; }
-    bool IsLooped { get; }
-    float Volume { get; }
-    float Pan { get; }
-    double Speed { get; }
-    int? LowPassFrequency { get; }
-    int? HighPassFrequency { get; }
+    bool IsLooped { get; set; }
+    float Volume { get; set; }
+    float Pan { get; set; }
+    double Speed { get; set; }
+    int? LowPassFrequency { get; set; }
+    int? HighPassFrequency { get; set; }
 
     public event EventHandler<SoundFinishedArgs>? SoundFinished;
     public event EventHandler<SoundLoopedArgs>? SoundLooped;

@@ -9,7 +9,7 @@ namespace GHEngine.Assets;
 public interface IAssetLoader
 {
     // Fields.
-    string AssetPath { get; set; }
+    string AssetDirectory { get; set; }
 
 
     // Methods.

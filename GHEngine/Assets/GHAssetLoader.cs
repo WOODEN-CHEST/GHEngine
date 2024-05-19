@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using NAudio.Wave;
+using NVorbis;
 using System.Collections;
 
 namespace GHEngine.Assets;
@@ -12,7 +13,7 @@ namespace GHEngine.Assets;
 public class GHAssetLoader : IAssetLoader
 {
     // Fields.
-    public string AssetPath
+    public string AssetDirectory
     {
         get => _assetPath;
         set
@@ -29,6 +30,7 @@ public class GHAssetLoader : IAssetLoader
     // Private static fields.
     private const char WRONG_PATH_SEPARATOR = '\\';
     private const char CORRECT_PATH_SEPARATOR = '/';
+    private const string AUDIO_FILE_EXTENSION =  "mp3";
 
 
     // Private fields.
@@ -39,10 +41,10 @@ public class GHAssetLoader : IAssetLoader
 
 
     // Constructors.
-    public GHAssetLoader(string assetPath, IServiceProvider serviceProvider, WaveFormat audioFormat)
+    public GHAssetLoader(string assetDirectory, IServiceProvider serviceProvider, WaveFormat audioFormat)
     {
-        AssetPath = assetPath;
-        _monogameContentManager = new(serviceProvider, assetPath);
+        AssetDirectory = assetDirectory;
+        _monogameContentManager = new(serviceProvider, assetDirectory);
         _audioFormat = audioFormat ?? throw new ArgumentNullException(nameof(audioFormat));
     }
 
@@ -58,7 +60,7 @@ public class GHAssetLoader : IAssetLoader
         {
             foreach (string FrameName in definition.Frames)
             {
-                string CorrectedFrameName = FormatPath(FrameName);
+                string CorrectedFrameName = FormatPath(Path.Combine(definition.Type.RootPathName, definition.Name));
                 Texture2D Original = _monogameContentManager.Load<Texture2D>(CorrectedFrameName);
                 Frames.Add(CreateTextureCopy(Original));
                 _monogameContentManager.UnloadAsset(CorrectedFrameName);
@@ -76,7 +78,7 @@ public class GHAssetLoader : IAssetLoader
     public SpriteFont LoadFont(GHFontDefinition definition)
     {
         SpriteFont Original;
-        string TargetPath = FormatPath(definition.Name);
+        string TargetPath = FormatPath(Path.Combine(definition.Type.RootPathName, definition.Name));
         try
         {
             Original = _monogameContentManager.Load<SpriteFont>(TargetPath);
@@ -99,7 +101,7 @@ public class GHAssetLoader : IAssetLoader
     public Effect LoadShader(GHShaderDefinition definition)
     {
         SpriteEffect Original;
-        string TargetPath = FormatPath(definition.Name);
+        string TargetPath = FormatPath(Path.Combine(definition.Type.RootPathName, definition.Name));
         try
         {
             Original = _monogameContentManager.Load<SpriteEffect>(TargetPath);
@@ -117,7 +119,7 @@ public class GHAssetLoader : IAssetLoader
     public ILanguage LoadLanguage(GHLanguageDefinition definition)
     {
         ILanguage Language = new GHLanguage(definition.LanguageNameLocal, definition.LanguageNameEnglish);
-        _languageReader.Read(Language, Path.Combine(AssetPath, definition.Name));
+        _languageReader.Read(Language, Path.Combine(AssetDirectory, definition.Type.RootPathName, definition.Name));
         return Language;
     }
 
@@ -144,10 +146,12 @@ public class GHAssetLoader : IAssetLoader
     private ISound LoadAudio(AssetDefinition definition)
     {
         AudioFileReader Reader = null!;
+        
         ISampleProvider Sampler;
         try
         {
-            Reader = new(Path.Combine(AssetPath, definition.Name));
+            Reader = new(Path.ChangeExtension(
+                Path.Combine(AssetDirectory, definition.Type.RootPathName, definition.Name), AUDIO_FILE_EXTENSION));
             {
                 Sampler = Reader.ToSampleProvider();
             }

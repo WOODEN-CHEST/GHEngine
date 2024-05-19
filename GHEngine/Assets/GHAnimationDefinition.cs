@@ -25,11 +25,11 @@ public class GHAnimationDefinition : AssetDefinition
     // Constructors. 
     public GHAnimationDefinition(string name, 
         string[] frames,
-        double fps = 60d,
-        int step = 1,
-        Rectangle? drawRegion = null,
-        bool isLooped = true,
-        bool isAnimated = true)
+        double fps,
+        int step,
+        Rectangle? drawRegion,
+        bool isLooped,
+        bool isAnimated)
         : base(AssetType.Animation, name)
     {
         _frames = frames ?? throw new ArgumentNullException(nameof(frames));

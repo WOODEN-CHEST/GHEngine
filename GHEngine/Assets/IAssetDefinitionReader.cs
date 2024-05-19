@@ -8,7 +8,7 @@ namespace GHEngine.Assets;
 
 public interface IAssetDefinitionReader
 {
-    void Read(IAssetDefinitionCollection definitions, string filePath);
+    void Read(IAssetDefinitionCollection definitions, string directoryPath);
 
     void Read(IAssetDefinitionCollection definitions, Stream dataStream);
 }

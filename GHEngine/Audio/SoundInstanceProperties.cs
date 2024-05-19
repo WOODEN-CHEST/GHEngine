@@ -25,7 +25,7 @@ internal struct SoundInstanceProperties
     {
         State = SoundInstanceState.Stopped;
         IsLooped = false;
-        Volume = GHSoundInstance.VOLUME_MAX;
+        Volume = 1f;
         Pan = GHSoundInstance.PAN_MIDDLE;
         Speed = GHSoundInstance.SPEED_DEFAULT;
         LowPassCutoffFrequency = null;

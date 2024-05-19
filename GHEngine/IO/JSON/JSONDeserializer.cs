@@ -21,22 +21,22 @@ public class JSONDeserializer
             throw new ArgumentNullException(nameof(data));
         }
 
-        SerializationState State = new(data);
-        SkipUnitlNowWhiteSpace(State);
+        DeserializationState State = new(data);
+        SkipUnitlNonWhiteSpace(State);
         return ParseValue(State);
     }
 
 
     // Private methods.
-    private void SkipUnitlNowWhiteSpace(SerializationState state)
+    private void SkipUnitlNonWhiteSpace(DeserializationState state)
     {
-        while (!char.IsWhiteSpace(state.GetChar()) && state.IsIndexInBounds)
+        while (char.IsWhiteSpace(state.GetChar()) && state.IsIndexInBounds)
         {
             state.IncrementIndex();
         }
     }
 
-    private JSONObject? ParseValue(SerializationState state)
+    private JSONObject? ParseValue(DeserializationState state)
     {
         char Character = state.GetChar();
         if (Character == JSONSyntax.COMPOUND_OPEN)
@@ -56,13 +56,17 @@ public class JSONDeserializer
         {
             return ParseNumber(state);
         }
+        else if (Character == JSONSyntax.QUOTE)
+        {
+            return new JSONString(ParseString(state));
+        }
         else
         {
             throw new JSONDeserializeException("Invalid value", state.Line, state.Column);
         }
     }
 
-    private JSONCompound ParseCompound(SerializationState state)
+    private JSONCompound ParseCompound(DeserializationState state)
     {
         if (state.GetChar() != JSONSyntax.COMPOUND_OPEN)
         {
@@ -70,44 +74,98 @@ public class JSONDeserializer
         }
         state.IncrementIndex();
 
-        SkipUnitlNowWhiteSpace(state);
-        while ((state.GetChar() != JSONSyntax.COMPOUND_OPEN) && state.IsIndexInBounds)
+        JSONCompound Compound = new();
+
+        SkipUnitlNonWhiteSpace(state);
+        bool ExpectingValue = false;
+        while (((state.GetChar() != JSONSyntax.COMPOUND_CLOSE) || ExpectingValue) && state.IsIndexInBounds)
         {
-            if ()
+            string Key = ParseString(state);
+            SkipUnitlNonWhiteSpace(state);
+            if (state.GetChar() != JSONSyntax.VALUE_DEFINITION)
+            {
+                throw new JSONDeserializeException("Expected value assignment after key.", state.Line, state.Column);
+            }
+            state.IncrementIndex();
+            SkipUnitlNonWhiteSpace(state);
 
+            JSONObject? Value = ParseValue(state);
+            Compound.AddEntry(Key, Value);
 
-
+            SkipUnitlNonWhiteSpace(state);
+            ExpectingValue = state.GetChar() == JSONSyntax.SEPARATOR;
+            if (ExpectingValue)
+            {
+                state.IncrementIndex();
+            }
+            SkipUnitlNonWhiteSpace(state);
         }
-
 
         if (state.GetChar() != JSONSyntax.COMPOUND_CLOSE)
         {
             throw new JSONDeserializeException($"Expected '{JSONSyntax.COMPOUND_CLOSE}'.", state.Line, state.Column);
         }
+        state.IncrementIndex();
+        return Compound;
     }
 
-    private JSONArray ParseArray(SerializationState state)
+    private JSONArray ParseArray(DeserializationState state)
     {
+        if (state.GetChar() != JSONSyntax.ARRAY_OPEN)
+        {
+            throw new JSONDeserializeException($"Expected '{JSONSyntax.ARRAY_OPEN}'.", state.Line, state.Column);
+        }
+        state.IncrementIndex();
 
+        JSONArray Array = new();
+
+        SkipUnitlNonWhiteSpace(state);
+        bool ExpectingValue = false;
+        while (((state.GetChar() != JSONSyntax.ARRAY_CLOSE) || ExpectingValue) && state.IsIndexInBounds)
+        {
+            Array.Add(ParseValue(state));
+
+            ExpectingValue = state.GetChar() == JSONSyntax.SEPARATOR;
+            if (ExpectingValue)
+            {
+                state.IncrementIndex();
+            }
+            SkipUnitlNonWhiteSpace(state);
+        }
+
+        if (state.GetChar() != JSONSyntax.ARRAY_CLOSE)
+        {
+            throw new JSONDeserializeException($"Expected '{JSONSyntax.ARRAY_CLOSE}'.", state.Line, state.Column);
+        }
+        state.IncrementIndex();
+        return Array;
     }
 
-    private string ParseString(SerializationState state)
+    private string ParseString(DeserializationState state)
     {
         if (state.GetChar() != '"')
         {
             throw new JSONDeserializeException("Missing starting quote for string.", state.Line, state.Column);
         }
+        state.IncrementIndex();
 
         StringBuilder Builder = new();
-        bool IsInEscapeSequence = false;
-        while (((state.GetChar() != JSONSyntax.QUOTE) || IsInEscapeSequence) && state.IsIndexInBounds)
+        while ((state.GetChar() != JSONSyntax.QUOTE) && state.IsIndexInBounds)
         {
-            char Character = state.GetChar();
+            if (state.GetChar() != JSONSyntax.ESCAPE_CHARACTER)
+            {
+                Builder.Append(state.GetChar());
+                state.IncrementIndex();
+                continue;
+            }
 
-            IsInEscapeSequence = !IsInEscapeSequence && (Character == JSONSyntax.ESCAPE_CHARACTER);
-            
+            state.IncrementIndex();
+            if (!state.IsIndexInBounds)
+            {
+                throw new JSONDeserializeException("Incomplete escape sequence", state.Line, state.Column);
+            }
 
-
+            Builder.Append(EscapedCharToChar(state, state.GetChar()));
             state.IncrementIndex();
         }
 
@@ -115,10 +173,60 @@ public class JSONDeserializer
         {
             throw new JSONDeserializeException("Missing ending quote for string.", state.Line, state.Column);
         }
+        state.IncrementIndex();
         return Builder.ToString();
     }
 
-    private JSONObject? ParseLiteralValue(SerializationState state)
+    private char EscapedCharToChar(DeserializationState state, char escapedChar)
+    {
+        switch (escapedChar)
+        {
+            case 't':
+                return '\t';
+            case 'n':
+                return '\n';
+            case 'f':
+                return '\f';
+            case 'r':
+                return '\r';
+            case 'b':
+                return '\b';
+            case JSONSyntax.CODEPOINT_INDICATOR:
+                return ReadCodepoint(state);
+            default:
+                return escapedChar;
+        }
+    }
+
+    private char ReadCodepoint(DeserializationState state)
+    {
+        if (state.GetChar() != 'u')
+        {
+            throw new JSONDeserializeException($"Missing indicator '{JSONSyntax.CODEPOINT_INDICATOR}' for codepoint.",
+                state.Line, state.Column);
+        }
+
+        Span<char> Codepoint = stackalloc char[4];
+        for (int i = 0; i < 4; i++)
+        {
+            state.IncrementIndex();
+            if (!state.IsIndexInBounds)
+            {
+                throw new JSONDeserializeException("Incomplete codepoint!", state.Line, state.Column);
+            }
+            Codepoint[i] = state.GetChar();
+        }
+        try
+        {
+            return (char)Convert.ToInt32(new string(Codepoint), 16);
+        }
+        catch (FormatException)
+        {
+            throw new JSONDeserializeException($"Invalid codepoint {new string(Codepoint)}.", state.Line, state.Column);
+        }
+    }
+
+    private JSONObject? ParseLiteralValue(DeserializationState state)
     {
         StringBuilder Builder = new();
         while (char.IsAsciiLetter(state.GetChar()))
@@ -144,11 +252,12 @@ public class JSONDeserializer
         }
     }
 
-    private JSONObject ParseNumber(SerializationState state)
+    private JSONObject ParseNumber(DeserializationState state)
     {
         StringBuilder Builder = new();
-        while (char.IsDigit(state.GetChar()) || (state.GetChar() == '.') || (char.ToLower(state.GetChar()) == 'e')
-            || (state.GetChar() == '+') || (state.GetChar() == '-'))
+        while (char.IsDigit(state.GetChar()) || (state.GetChar() == JSONSyntax.NUMBER_SEPARATOR)
+            || (char.ToLower(state.GetChar()) == JSONSyntax.NUMBER_EXPONENT) || (state.GetChar() == JSONSyntax.NUMBER_SIGN_PLUS)
+            || (state.GetChar() == JSONSyntax.NUMBER_SIGN_MINUS))
         {
             Builder.Append(state.GetChar());
             state.IncrementIndex();
@@ -171,7 +280,7 @@ public class JSONDeserializer
 
 
     // Types.
-    private class SerializationState
+    private class DeserializationState
     {
         // Fields.
         public string Data { get; }
@@ -182,7 +291,7 @@ public class JSONDeserializer
 
 
         // Constructors.
-        public SerializationState(string data)
+        public DeserializationState(string data)
         {
             Data = data ?? throw new ArgumentNullException(nameof(data));
         }

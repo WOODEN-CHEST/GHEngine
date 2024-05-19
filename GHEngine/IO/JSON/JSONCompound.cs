@@ -45,7 +45,7 @@ public class JSONCompound : JSONObject, IEnumerable<KeyValuePair<string, JSONObj
         return Value as T;
     }
 
-    public T? GetVerifiedEntry<T>(string key) where T : JSONObject
+    public T GetVerifiedEntry<T>(string key) where T : JSONObject
     {
         _entries.TryGetValue(key, out JSONObject? Value);
 
@@ -70,11 +70,14 @@ public class JSONCompound : JSONObject, IEnumerable<KeyValuePair<string, JSONObj
     // Private methods.
     private T ReturnCastedObject<T>(string key, JSONObject value) where T : JSONObject
     {
-        if (value is T)
+        try
         {
             return (T)value;
         }
-        throw new JSONEntryException($"Entry with key \"{key}\" is of type {value.GetType()}, expected {typeof(T)}.");
+        catch (InvalidCastException)
+        {
+            throw new JSONEntryException($"Entry with key \"{key}\" is of type {value.GetType()}, expected {typeof(T)}.");
+        }
     }
 
 

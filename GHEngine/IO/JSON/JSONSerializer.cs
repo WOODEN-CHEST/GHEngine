@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,7 +33,7 @@ public class JSONSerializer
         }
         else if (jsonObject is JSONRealNumber RealNumberObject)
         {
-            return RealNumberObject.Value.ToString();
+            return RealNumberObject.Value.ToString(CultureInfo.InvariantCulture);
         }
         else if (jsonObject is JSONBoolean BooleanObject)
         {
@@ -56,16 +57,17 @@ public class JSONSerializer
     {
         if (array.Count == 0)
         {
-            return "[]";
+            return $"{JSONSyntax.ARRAY_OPEN}{JSONSyntax.ARRAY_CLOSE}";
         }
 
-        StringBuilder Data = new('[');
+        StringBuilder Data = new();
+        Data.Append(JSONSyntax.ARRAY_OPEN);
         int EntryIndex = 0;
         foreach (JSONObject? Entry in array)
         {
             if (EntryIndex != 0)
             {
-                Data.Append(',');
+                Data.Append(JSONSyntax.SEPARATOR);
             }
 
             AppendIfFormatted(Data, '\n', format);
@@ -78,7 +80,7 @@ public class JSONSerializer
         AppendIfFormatted(Data, '\n', format);
         AppendIndent(Data, indentLevel - 1, format);
 
-        Data.Append(']');
+        Data.Append(JSONSyntax.ARRAY_CLOSE);
         return Data.ToString();
     }
 
@@ -86,22 +88,24 @@ public class JSONSerializer
     {
         if (compound.EntryCount == 0)
         {
-            return "{}";
+            return $"{JSONSyntax.COMPOUND_OPEN}{JSONSyntax.COMPOUND_CLOSE}";
         }
 
-        StringBuilder Data = new('{');
+        StringBuilder Data = new();
+        Data.Append(JSONSyntax.COMPOUND_OPEN);
         int EntryIndex = 0;
         foreach (KeyValuePair<string, JSONObject?> Entry in compound)
         {
             if (EntryIndex != 0)
             {
-                Data.Append(',');
+                Data.Append(JSONSyntax.SEPARATOR);
             }
 
             AppendIfFormatted(Data, '\n', format);
             AppendIndent(Data, indentLevel, format);
 
-            Data.Append($"\"{FormatString(Entry.Key)}\"");
+            Data.Append($"{JSONSyntax.QUOTE}{FormatString(Entry.Key)}{JSONSyntax.QUOTE}");
+            Data.Append(JSONSyntax.VALUE_DEFINITION);
             AppendIfFormatted(Data, ' ', format);
             Data.Append(SerializeObject(Entry.Value, format, indentLevel + 1));
             EntryIndex++;
@@ -109,7 +113,7 @@ public class JSONSerializer
 
         AppendIfFormatted(Data, '\n', format);
         AppendIndent(Data, indentLevel - 1, format);
-        Data.Append('}');
+        Data.Append(JSONSyntax.COMPOUND_CLOSE);
 
         return Data.ToString();
     }
@@ -129,7 +133,7 @@ public class JSONSerializer
             return;
         }
 
-        for (int i = 0; i < level; i++)
+        for (int i = 0; i < level + 1; i++)
         {
             builder.Append("    ");
         }
@@ -166,6 +170,10 @@ public class JSONSerializer
 
                 case '\f':
                     FormattedData.Append("\\f");
+                    break;
+
+                case '\b':
+                    FormattedData.Append("\\b");
                     break;
 
                 default:

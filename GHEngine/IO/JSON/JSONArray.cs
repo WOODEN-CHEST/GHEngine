@@ -70,24 +70,6 @@ public class JSONArray : JSONObject, IList<JSONObject?>
         return GetEnumerator();
     }
 
-    public override string Serialize(bool format, int indentLevel)
-    {
-        if (Count == 0)
-        {
-            return "[]";
-        }
-
-        StringBuilder Data = new();
-        for (int i = 0; i < Count; i++)
-        {
-            if (i != 0)
-            {
-                Data.Append(',');
-            }
-
-        }
-    }
-
 
     // Operators.
     public JSONObject? this[int index]

@@ -20,6 +20,7 @@ public static class JSONSyntax
     public const char NUMBER_SIGN_MINUS = '-';
     public const char VALUE_DEFINITION = ':';
     public const char ESCAPE_CHARACTER = '\\';
+    public const char CODEPOINT_INDICATOR = 'u';
 
     public const string LITERAL_NULL = "null";
     public const string LITERAL_TRUE = "true";

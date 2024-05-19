@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public interface IAssetDefinitionCollection
+public interface IAssetDefinitionCollection : IEnumerable<AssetDefinition>
 {
     void Add(AssetDefinition definition);
 

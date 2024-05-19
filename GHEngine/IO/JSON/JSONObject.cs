@@ -8,7 +8,4 @@ using System.Threading.Tasks;
 namespace GHEngine.IO.JSON;
 
 [Serializable]
-public abstract class JSONObject
-{
-
-}
+public abstract class JSONObject { }

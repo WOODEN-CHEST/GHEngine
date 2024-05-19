@@ -51,7 +51,7 @@ public sealed class GHSpriteAnimation : ISpriteAnimation
     // Methods.
     public IAnimationInstance CreateInstance()
     {
-        return new GHSpriteAnimation(this);
+        return new GHAnimationInstance(this);
     }
 
 

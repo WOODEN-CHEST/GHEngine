@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public interface IAssetStorage : IAssetProvider
+public class AssetDefinitionReadException : Exception
 {
-    // Fields.
-    public IAssetDefinitionCollection Definitions { get; set; }
-    public IAsset
+    public AssetDefinitionReadException(string message) : base(message) { }
 }

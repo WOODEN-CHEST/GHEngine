@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace GHEngine.IO;
 
-public class UserInput : IUserInput
+public class GHUserInput : IUserInput
 {
     // Fields.
     public int MouseScrollChangeAmount { get; private set; }
@@ -64,7 +64,7 @@ public class UserInput : IUserInput
 
 
     // Constructors.
-    public UserInput(GameWindow window, Game game, IDisplay display)
+    public GHUserInput(GameWindow window, Game game, IDisplay display)
     {
         _window = window ?? throw new ArgumentNullException(nameof(window));
         _game = game ?? throw new ArgumentNullException(nameof(game));

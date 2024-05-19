@@ -20,6 +20,10 @@ public class JSONInteger : JSONObject
 
 
     // Operators.
+    public static implicit operator float(JSONInteger value) => value.Value;
+
+    public static implicit operator double(JSONInteger value) => value.Value;
+
     public static implicit operator long (JSONInteger value) => value.Value;
 
     public static implicit operator ulong (JSONInteger value) => (ulong)value.Value;

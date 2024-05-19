@@ -143,6 +143,7 @@ public class GHAudioEngine : IAudioEngine
         if (_sounds.Count == 0)
         {
             FillBufferWithSilence(buffer, offset, count);
+            return;
         }
 
         // Overwrite buffer data with the first sound.

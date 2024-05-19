@@ -10,8 +10,11 @@
 
   <ItemGroup>
     <Compile Remove="Frame\Item\TextA\**" />
+    <Compile Remove="IO\DataFile\**" />
     <EmbeddedResource Remove="Frame\Item\TextA\**" />
+    <EmbeddedResource Remove="IO\DataFile\**" />
     <None Remove="Frame\Item\TextA\**" />
+    <None Remove="IO\DataFile\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +27,7 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
   </ItemGroup>
 
 </Project>

@@ -9,5 +9,5 @@ namespace GHEngine.IO.JSON;
 public class JSONDeserializeException : JSONException
 {
     public JSONDeserializeException(string message, int line, int column)
-        : base($"Failed to deserialize JSON on line {line}, column {column}. {message}");
+        : base($"Failed to deserialize JSON on line {line}, column {column}. {message}") { }
 }

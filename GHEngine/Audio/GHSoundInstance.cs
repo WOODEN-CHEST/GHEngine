@@ -253,10 +253,9 @@ public class GHSoundInstance : ISoundInstance
         double ClampedIndex = isLooped ? index % (Sound.SingleChannelSampleCount - 1d) : index;
         double LowerIndex = Math.Floor(ClampedIndex);
         double UpperIndex = Math.Ceiling(ClampedIndex);
-        long IndexMultiplier = channelIndex + 1;
 
-        float LowerSample = LowerIndex <= MaxIndex ? Sound.Samples[(long)LowerIndex * IndexMultiplier] : 0f;
-        float UpperSample = UpperIndex <= MaxIndex ? Sound.Samples[(long)UpperIndex * IndexMultiplier] : 0f;
+        float LowerSample = LowerIndex <= MaxIndex ? Sound.Samples[(long)LowerIndex * Sound.Format.Channels + channelIndex] : 0f;
+        float UpperSample = UpperIndex <= MaxIndex ? Sound.Samples[(long)LowerIndex * Sound.Format.Channels + channelIndex] : 0f;
 
         return LowerSample + (UpperSample - LowerSample) * (float)(ClampedIndex % 1d);
     }
@@ -285,10 +284,10 @@ public class GHSoundInstance : ISoundInstance
         {
             CurrentProperties = _properties;
         }
-
+        
         try
         {
-            ReadSamples(buffer, CurrentProperties.Index, sampleCount, CurrentProperties.Volume,
+            double NewIndex = ReadSamples(buffer, CurrentProperties.Index, sampleCount, CurrentProperties.Volume,
                 CurrentProperties.Speed, CurrentProperties.IsLooped);
 
             if (CurrentProperties.Pan != PAN_MIDDLE)
@@ -315,9 +314,16 @@ public class GHSoundInstance : ISoundInstance
                 }
                 BiQuadFilterPass(buffer, sampleCount);
             }
+
+            lock (this)
+            {
+                _properties.Index = NewIndex;
+            }
         }
+
         catch (IndexOutOfRangeException e)
         {
+            // Yes, under normal circumstances this should not happen. 
             throw new InvalidOperationException($"Corrupted audio data which caused index to become out of bounds. {e}");
         }
     }

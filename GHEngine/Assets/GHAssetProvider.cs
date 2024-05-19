@@ -78,11 +78,7 @@ public class GHAssetProvider : IAssetProvider
         }
         else if ((type == AssetType.Sound) || (type == AssetType.Song))
         {
-            List<float> Samples = new();
-            Samples.AddRange(Enumerable.Repeat(-0.5f, _audioFormat.Channels));
-            Samples.AddRange(Enumerable.Repeat(0.5f, _audioFormat.Channels));
-
-            return new GHSound(Samples.ToArray(), _audioFormat);
+            return new GHSound(Enumerable.Repeat(0f, _audioFormat.Channels).ToArray(), _audioFormat);
         }
         else if (type == AssetType.Language)
         {

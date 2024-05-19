@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -63,5 +64,18 @@ public class GHAssetDefinitionCollection : IAssetDefinitionCollection
             return Array.Empty<AssetDefinition>();
         }
         return _definitions[type].Values.ToArray();
+    }
+
+    public IEnumerator<AssetDefinition> GetEnumerator()
+    {
+        foreach (AssetDefinition Definition in GetAll())
+        {
+            yield return Definition;
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }
