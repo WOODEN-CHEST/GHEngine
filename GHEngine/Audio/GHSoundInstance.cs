@@ -39,7 +39,7 @@ public class GHSoundInstance : ISoundInstance
         {
             lock (this)
             {
-                double Sample = value.Seconds * Sound.Format.SampleRate;
+                double Sample = value.TotalSeconds * Sound.Format.SampleRate;
                 _properties.Index = Math.Clamp(Sample, 0d, Sound.SampleCount);
             }
         }
@@ -168,22 +168,24 @@ public class GHSoundInstance : ISoundInstance
     internal GHSoundInstance(ISound sound)
     {
         Sound = sound ?? throw new ArgumentNullException(nameof(sound));
-        _properties = new(); 
-        _filters = new BiQuadFilter[Sound.Format.Channels];
+        _properties = new();
+        EnsureFilterCount();
     }
 
 
     // Private methods.
     private void EnsureFilterCount()
     {
-        if (_filters.Length != Sound.Format.Channels)
+        if ((_filters == null) || (_filters.Length != Sound.Format.Channels))
         {
             _filters = new BiQuadFilter[Sound.Format.Channels];
+            for (int i = 0; i < _filters.Length; i++)
+            {
+                _filters[i] = BiQuadFilter.AllPassFilter(Sound.Format.SampleRate, 20000, FILTER_ORDER);
+            }
         }
     }
 
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PanPass(float[] buffer, int count, float pan)
     {
         if (Sound.Format.Channels != 2)
@@ -191,42 +193,26 @@ public class GHSoundInstance : ISoundInstance
             throw new NotSupportedException("Panning not supported for non 2 channel sounds.");
         }
 
-        const float MIN_MAIN_VOLUME = 0.5f;
-        const float MAX_SECONDARY_VOLUME = 0.5f;
-        const float MAX_VOLUME_BOOST = 0.4f;
+        const float MAX_VOLUME_BOOST = 0.3f; // Account for perceived loudness, however, it is still basically a random value.
 
-        bool PannedToLeft = pan < PAN_MIDDLE;
-        pan = PannedToLeft ? pan : (PAN_RIGHT - pan);
-        float VolumeBoost = 1f + MAX_VOLUME_BOOST * (1f - pan);
+        float PanLeftStrength = Math.Abs(Math.Min(pan, 0));
+        float PanRightStrength = Math.Max(pan, 0);
 
-        if (PannedToLeft)
+        float RightVolumeInLeft = PanLeftStrength + (PanLeftStrength * MAX_VOLUME_BOOST);
+        float LeftVolumeInRight = PanRightStrength + (PanRightStrength * MAX_VOLUME_BOOST);
+        float LeftVolumeInLeft = 1f + (PanLeftStrength * MAX_VOLUME_BOOST) - (PanRightStrength);
+        float RightVolumeInRight = 1f + (PanRightStrength * MAX_VOLUME_BOOST) - (PanLeftStrength);
+
+        for (int i = 0; i < count; i += 2)
         {
-            float LeftVolumeInLeft = (MIN_MAIN_VOLUME + (MAX_SECONDARY_VOLUME * pan)) * VolumeBoost;
-            float RightVolumeInLeft = VOLUME_MAX - LeftVolumeInLeft;
-            float RightVolume = pan;
-
-            for (int i = 0; i < count - 1; i += 2)
-            {
-                buffer[i] = (buffer[i] * LeftVolumeInLeft) + (buffer[i + 1] * RightVolumeInLeft);
-                buffer[i + 1] *= RightVolume;
-            }
-        }
-        else
-        {
-            float RightVolumeInRight = (MIN_MAIN_VOLUME + (MAX_SECONDARY_VOLUME * pan)) * VolumeBoost;
-            float LeftVolumeInRight = VOLUME_MAX - RightVolumeInRight;
-            float LeftVolume = pan;
-
-            for (int i = 0; i < count - 1; i += 2)
-            {
-                buffer[i] *= LeftVolume;
-                buffer[i + 1] = (buffer[i + 1] * RightVolumeInRight) + (buffer[i] * LeftVolumeInRight);
-            }
+            float LeftSample = buffer[i];
+            float RightSample = buffer[i + 1];
+            buffer[i] = (LeftSample * LeftVolumeInLeft) + (RightSample * RightVolumeInLeft);
+            buffer[i + 1] = (RightSample * RightVolumeInRight) + (LeftSample * LeftVolumeInRight);
         }
     }
 
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void BiQuadFilterPass(float[] buffer, int count)
     {
         if (count % _filters.Length != 0)
@@ -246,7 +232,6 @@ public class GHSoundInstance : ISoundInstance
 
 
     /* Reading. */
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private float GetSingleSample(double index, int channelIndex, bool isLooped)
     {
         double MaxIndex = Sound.SingleChannelSampleCount - 1d;

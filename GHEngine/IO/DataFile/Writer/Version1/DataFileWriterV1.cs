@@ -16,7 +16,7 @@ internal sealed class DataFileWriterV1 : DataFileWriter
 
 
     // Protected methods.
-    protected override void WriteData(BinaryWriter writer, DataFileCompound dataCompound)  
+    protected override void WriteData(BinaryWriter writer, GHDFCompound dataCompound)  
     {
         foreach (KeyValuePair<int, object> Item in dataCompound)
         {
@@ -97,9 +97,9 @@ internal sealed class DataFileWriterV1 : DataFileWriter
         {
             WriteString(writer, (string)item);
         }
-        else if (item is DataFileCompound)
+        else if (item is GHDFCompound)
         {
-            WriteCompound(writer, (DataFileCompound)item);
+            WriteCompound(writer, (GHDFCompound)item);
         }
         else
         {
@@ -163,9 +163,9 @@ internal sealed class DataFileWriterV1 : DataFileWriter
         {
             WriteStringArray(writer, (string[])array);
         }
-        else if (array is DataFileCompound[])
+        else if (array is GHDFCompound[])
         {
-            WriteCompoundArray(writer, (DataFileCompound[])array);
+            WriteCompoundArray(writer, (GHDFCompound[])array);
         }
         else
         {
@@ -177,85 +177,85 @@ internal sealed class DataFileWriterV1 : DataFileWriter
 
     private void WriteInt8(BinaryWriter writer, byte value)
     {
-        writer.Write((byte)DataType.Int8);
+        writer.Write((byte)GHDFType.Int8);
         writer.Write(value);
     }
 
     private void WriteSInt8(BinaryWriter writer, sbyte value)
     {
-        writer.Write((byte)DataType.SInt8);
+        writer.Write((byte)GHDFType.SInt8);
         writer.Write(value);
     }
 
     private void WriteInt16(BinaryWriter writer, short value)
     {
-        writer.Write((byte)DataType.Int16);
+        writer.Write((byte)GHDFType.Int16);
         writer.Write(value);
     }
 
     private void WriteUInt16(BinaryWriter writer, ushort value)
     {
-        writer.Write((byte)DataType.UInt16);
+        writer.Write((byte)GHDFType.UInt16);
         writer.Write(value);
     }
 
     private void WriteInt32(BinaryWriter writer, int value)
     {
-        writer.Write((byte)DataType.Int32);
+        writer.Write((byte)GHDFType.Int32);
         writer.Write(value);
     }
 
     private void WriteUInt32(BinaryWriter writer, uint value)
     {
-        writer.Write((byte)DataType.UInt32);
+        writer.Write((byte)GHDFType.UInt32);
         writer.Write(value);
     }
 
     private void WriteInt64(BinaryWriter writer, long value)
     {
-        writer.Write((byte)DataType.Int64);
+        writer.Write((byte)GHDFType.Int64);
         writer.Write(value);
     }
 
     private void WriteUInt64(BinaryWriter writer, ulong value)
     {
-        writer.Write((byte)DataType.UInt64);
+        writer.Write((byte)GHDFType.UInt64);
         writer.Write(value);
     }
 
     private void WriteFloat(BinaryWriter writer, float value)
     {
-        writer.Write((byte)DataType.Single);
+        writer.Write((byte)GHDFType.Float);
         writer.Write(value);
     }
 
     private void WriteDouble(BinaryWriter writer, double value)
     {
-        writer.Write((byte)DataType.Double);
+        writer.Write((byte)GHDFType.Double);
         writer.Write(value);
     }
 
     private void WriteBool(BinaryWriter writer, bool value)
     {
-        writer.Write((byte)DataType.Boolean);
+        writer.Write((byte)GHDFType.Boolean);
         writer.Write(value);
     }
 
     private void WriteChar(BinaryWriter writer, char value)
     {
-        writer.Write((byte)DataType.Char);
+        writer.Write((byte)GHDFType.Char);
         writer.Write(value);
     }
 
     private void WriteString(BinaryWriter writer, string value)
     {
-        writer.Write((byte)DataType.String);
+        writer.Write((byte)GHDFType.String);
         writer.Write(value);
     }
 
-    private void WriteCompound(BinaryWriter writer, DataFileCompound dataCompound)
+    private void WriteCompound(BinaryWriter writer, GHDFCompound dataCompound)
     {
-        writer.Write((byte)DataType.Compound);
+        writer.Write((byte)GHDFType.Compound);
 
         foreach (KeyValuePair<int, object> Item in dataCompound)
         {
@@ -267,91 +267,91 @@ internal sealed class DataFileWriterV1 : DataFileWriter
 
     private void WriteInt8Array(BinaryWriter writer, byte[] array)
     {
-        writer.Write((byte)((int)DataType.Int8 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Int8 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<byte>(array));
     }
 
     private void WriteSInt8Array(BinaryWriter writer, sbyte[] array)
     {
-        writer.Write((byte)((int)DataType.SInt8 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.SInt8 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<sbyte>(array));
     }
 
     private void WriteInt16Array(BinaryWriter writer, short[] array)
     {
-        writer.Write((byte)((int)DataType.Int16 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Int16 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<short>(array));
     }
 
     private void WriteUInt16Array(BinaryWriter writer, ushort[] array)
     {
-        writer.Write((byte)((int)DataType.UInt16 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.UInt16 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<ushort>(array));
     }
 
     private void WriteInt32Array(BinaryWriter writer, int[] array)
     {
-        writer.Write((byte)((int)DataType.Int32 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Int32 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<int>(array));
     }
 
     private void WriteUInt32Array(BinaryWriter writer, uint[] array)
     {
-        writer.Write((byte)((int)DataType.UInt32 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.UInt32 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<uint>(array));
     }
 
     private void WriteInt64Array(BinaryWriter writer, long[] array)
     {
-        writer.Write((byte)((int)DataType.Int64 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Int64 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes <long>(array));
     }
 
     private void WriteUInt64Array(BinaryWriter writer, ulong[] array)
     {
-        writer.Write((byte)((int)DataType.UInt64 | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.UInt64 | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<ulong>(array));
     }
 
     private void WriteFloatArray(BinaryWriter writer, float[] array)
     {
-        writer.Write((byte)((int)DataType.Single | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Float | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<float>(array));
     }
 
     private void WriteDoubleArray(BinaryWriter writer, double[] array)
     {
-        writer.Write((byte)((int)DataType.Double | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Double | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<double>(array));
     }
 
     private void WriteBoolArray(BinaryWriter writer, bool[] array)
     {
-        writer.Write((byte)((int)DataType.Boolean | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Boolean | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<bool>(array));
     }
 
     private void WriteCharArray(BinaryWriter writer, char[] array)
     {
-        writer.Write((byte)((int)DataType.Char | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Char | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
         writer.Write(MemoryMarshal.AsBytes<char>(array));
     }
 
     private void WriteStringArray(BinaryWriter writer, string[] array)
     {
-        writer.Write((byte)((int)DataType.String | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.String | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
 
         foreach (var String in array)
@@ -360,9 +360,9 @@ internal sealed class DataFileWriterV1 : DataFileWriter
         }
     }
 
-    private void WriteCompoundArray(BinaryWriter writer, DataFileCompound[] array)
+    private void WriteCompoundArray(BinaryWriter writer, GHDFCompound[] array)
     {
-        writer.Write((byte)((int)DataType.Compound | (int)DataTypeFlag.Array));
+        writer.Write((byte)((int)GHDFType.Compound | (int)DataTypeFlag.Array));
         writer.Write7BitEncodedInt(array.Length);
 
         foreach (var Compound in array)

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.IO.DataFile;
 
-public class DataReadException : Exception
+public class DataReadException : DataFileException
 {
     // Constructors.
     public DataReadException() : base("Failed to read file data due to an unknown reason.") { }

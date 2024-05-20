@@ -21,7 +21,7 @@ internal sealed class DataFileReaderV1 : DataFileReader
 
 
     // Methods.
-    public override DataFileCompound Read()
+    public override GHDFCompound Read()
     {
         try
         {
@@ -38,7 +38,7 @@ internal sealed class DataFileReaderV1 : DataFileReader
     private object ReadItem(int id)
     {
         byte ItemTypeByte = Reader.ReadByte();
-        DataType ItemType = (DataType)(ItemTypeByte & ~(int)DataTypeFlag.Array);
+        GHDFType ItemType = (GHDFType)(ItemTypeByte & ~(int)DataTypeFlag.Array);
         bool IsArray = (ItemTypeByte & (int)DataTypeFlag.Array) != 0;
 
         object Value = IsArray ? ReadArray(ItemType) : ReadSingleValue(ItemType);
@@ -46,35 +46,35 @@ internal sealed class DataFileReaderV1 : DataFileReader
         return Value;
     }
 
-    private object ReadSingleValue(DataType itemType)
+    private object ReadSingleValue(GHDFType itemType)
     {
         return itemType switch
         {
-            DataType.Int8 => Reader!.ReadByte(),
-            DataType.SInt8 => Reader!.ReadSByte(),
-            DataType.Int16 => Reader!.ReadInt16(),
-            DataType.UInt16 => Reader!.ReadUInt16(),
-            DataType.Int32 => Reader!.ReadInt32(),
-            DataType.UInt32 => Reader!.ReadUInt32(),
-            DataType.Int64 => Reader!.ReadInt64(),
-            DataType.UInt64 => Reader!.ReadUInt64(),
+            GHDFType.Int8 => Reader!.ReadByte(),
+            GHDFType.SInt8 => Reader!.ReadSByte(),
+            GHDFType.Int16 => Reader!.ReadInt16(),
+            GHDFType.UInt16 => Reader!.ReadUInt16(),
+            GHDFType.Int32 => Reader!.ReadInt32(),
+            GHDFType.UInt32 => Reader!.ReadUInt32(),
+            GHDFType.Int64 => Reader!.ReadInt64(),
+            GHDFType.UInt64 => Reader!.ReadUInt64(),
 
-            DataType.Single => Reader!.ReadSingle(),
-            DataType.Double => Reader!.ReadDouble(),
+            GHDFType.Float => Reader!.ReadSingle(),
+            GHDFType.Double => Reader!.ReadDouble(),
 
-            DataType.Boolean => Reader!.ReadBoolean(),
+            GHDFType.Boolean => Reader!.ReadBoolean(),
 
-            DataType.Char => Reader!.ReadChar(),
-            DataType.String => Reader!.ReadString(),
+            GHDFType.Char => Reader!.ReadChar(),
+            GHDFType.String => Reader!.ReadString(),
 
-            DataType.Compound => ReadCompound(),
+            GHDFType.Compound => ReadCompound(),
 
             _ => throw new DataReadException($"Unknown or invalid data type found." +
             $"{Environment.NewLine}Enum name: \"{itemType}\". Enum byte value: {(byte)itemType}.")
         };
     }
 
-    private object[] ReadArray(DataType typeOfValue)
+    private object[] ReadArray(GHDFType typeOfValue)
     {
         int ArrayLength = Reader!.Read7BitEncodedInt();
         if (ArrayLength < 0)
@@ -92,9 +92,9 @@ internal sealed class DataFileReaderV1 : DataFileReader
         return DataArray;
     }
 
-    private DataFileCompound ReadCompound()
+    private GHDFCompound ReadCompound()
     {
-        DataFileCompound Compound = new();
+        GHDFCompound Compound = new();
 
         int ID;
         while ((ID = Reader.Read7BitEncodedInt()) != IDataFile.TERMINATING_ID)

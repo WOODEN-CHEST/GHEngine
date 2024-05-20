@@ -1,11 +1,11 @@
 ﻿namespace GHEngine.IO.DataFile;
 
-public enum DataType : byte
+public enum GHDFType : byte
 {
     None = 0,
 
     Int8 = 1,
-    SInt8 = 2,
+    UInt8 = 2,
     Int16 = 3,
     UInt16 = 4,
     Int32 = 5,
@@ -13,13 +13,12 @@ public enum DataType : byte
     Int64 = 7,
     UInt64 = 8,
 
-    Single = 9,
+    Float = 9,
     Double = 10,
 
     Boolean = 11,
+    
+    String = 12,
 
-    Char = 12,
-    String = 13,
-
-    Compound = 14
+    Compound = 13
 }

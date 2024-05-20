@@ -66,7 +66,7 @@ public abstract class DataFileReader : IDataFile, IDisposable
 
 
     // Methods.
-    public abstract DataFileCompound Read();
+    public abstract GHDFCompound Read();
 
 
     // Private static methods.

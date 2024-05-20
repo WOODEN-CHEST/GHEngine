@@ -8,14 +8,18 @@ using System.Threading.Tasks;
 
 namespace GHEngine.IO.DataFile;
 
-public class DataFileCompound : IEnumerable<KeyValuePair<int, object>>
+public class GHDFCompound : IEnumerable<KeyValuePair<int, object>>
 {
+    // Fields.
+    public int Count => _entries.Count;
+
+
     // Private fields.
     private readonly Dictionary<int, object> _entries = new();
 
 
     // Methods.
-    public DataFileCompound Add(int id, object entry)
+    public GHDFCompound Add(int id, object entry)
     {
         VerifyID(id);
 
@@ -28,7 +32,7 @@ public class DataFileCompound : IEnumerable<KeyValuePair<int, object>>
         return this;
     }
 
-    public DataFileCompound Set(int id, object entry)
+    public GHDFCompound Set(int id, object entry)
     {
         VerifyID(id);
         _entries[id] = entry;
@@ -39,14 +43,34 @@ public class DataFileCompound : IEnumerable<KeyValuePair<int, object>>
     public T? Get<T>(int id)
     {
         _entries.TryGetValue(id, out var Value);
-        return (T?)Value;
+        return ReturnCasted<T>(Value!);
+    }
+
+    public T GetVerified<T>(int id)
+    {
+        _entries.TryGetValue(id, out object? Value);
+        if (Value == null)
+        {
+            throw new DataFileEntryException($"Mandatory value with ID ${id} not found.");
+        }
+        return ReturnCasted<T>(Value);
+    }
+
+    public T? GetOptionalVerified<T>(int id)
+    {
+        _entries.TryGetValue(id, out object? Value);
+        if (Value == null)
+        {
+            return default;
+        }
+        return ReturnCasted<T>(Value);
     }
 
     public T GetOrDefault<T>(int id, T defaultValue)
     {
         if (_entries.ContainsKey(id))
         {
-            return (T)_entries[id];
+            return Get<T>(id)!;
         }
 
         return defaultValue;
@@ -63,6 +87,19 @@ public class DataFileCompound : IEnumerable<KeyValuePair<int, object>>
         if (id == 0)
         {
             throw new ArgumentException("ID cannot be zero.", nameof(id));
+        }
+    }
+
+    private T ReturnCasted<T>(object value)
+    {
+        try
+        {
+            return (T)value;
+        }
+        catch (InvalidCastException)
+        {
+            throw new DataFileEntryException($"Data type mismatch, value is of type \"{value.GetType()}\"," +
+                $" expected \"{typeof(T)}\"");
         }
     }
 

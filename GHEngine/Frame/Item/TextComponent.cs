@@ -10,6 +10,10 @@ namespace GHEngine.Frame.Item;
 
 public class TextComponent : IColorMaskable
 {
+    // Static fields.
+    public const float ONE_UNIT_SIZE = 0.003f;
+
+
     // Fields.
     public bool IsVisible { get; set; }
 
@@ -20,6 +24,7 @@ public class TextComponent : IColorMaskable
         {
             _text = value ?? throw new ArgumentNullException(nameof(value));
             _cachedDrawSize = null;
+            TextChange?.Invoke(this, new(this));
         }
     }
 
@@ -30,10 +35,20 @@ public class TextComponent : IColorMaskable
         {
             _font = value ?? throw new ArgumentNullException(nameof(value));
             _cachedDrawSize = null;
+            FontChange?.Invoke(this, new(this));
         }
     }
 
-    internal float FontSize { get; set; }
+    internal float FontSize
+    {
+        get => _fontSize;
+        set
+        {
+            _fontSize = value;
+            _cachedDrawSize = null;
+            FontSizeChange?.Invoke(this, new(this));
+        }
+    }
 
     public float Brightness
     {
@@ -59,15 +74,15 @@ public class TextComponent : IColorMaskable
         {
             if (_cachedDrawSize == null)
             {
-                _cachedDrawSize = _font.MeasureString(Text);
+                _cachedDrawSize = CalculateDrawSize(Text);
             }
             return _cachedDrawSize.Value;
         }
     }
 
-
-    // Private static fields.
-    private const float ONE_UNIT_SIZE = 0.003f;
+    public event EventHandler<TextComponentArgs>? TextChange;
+    public event EventHandler<TextComponentArgs>? FontChange;
+    public event EventHandler<TextComponentArgs>? FontSizeChange;
 
 
     // Private fields.
@@ -75,6 +90,7 @@ public class TextComponent : IColorMaskable
     private GenericColorMask _colorMask;
     private string _text = string.Empty;
     private Vector2? _cachedDrawSize = null;
+    private float _fontSize = 1f;
 
 
     // Constructors.
@@ -87,5 +103,13 @@ public class TextComponent : IColorMaskable
     {
         Font = font;
         Text = text;
+    }
+
+
+    // Methods.
+    public Vector2 CalculateDrawSize(string text)
+    {
+        return new Vector2(_font.MeasureString(text).X / Font.LineSpacing * ONE_UNIT_SIZE * FontSize,
+                    FontSize * ONE_UNIT_SIZE);
     }
 }

@@ -19,25 +19,16 @@ namespace GHEngine
             ISoundInstance SoundInstance = Sound.CreateInstance();
             SoundInstance.IsLooped = true;
             SoundInstance.Speed = 1d;
+            SoundInstance.CurrentTime = new TimeSpan(0, 0, 1, 22, 0);
+            SoundInstance.LowPassFrequency = null;
+            SoundInstance.Volume = 0.5f;
+            SoundInstance.Pan = 0f;
             AudioEngine.AddSoundInstance(SoundInstance);
-
-            IUserInput Input = new FakeInput();
 
 
             while (true)
             {
-                Input.RefreshInput();
-
-                if (Input.WereKeysJustPressed(Keys.Up))
-                {
-                    SoundInstance.Speed += 0.05f;
-                }
-                else if (Input.WereKeysJustPressed(Keys.Down))
-                {
-                    SoundInstance.Speed -= 0.05f;
-                }
-
-                Thread.Sleep(1);
+                Thread.Sleep(10000);
             }
         }
 
