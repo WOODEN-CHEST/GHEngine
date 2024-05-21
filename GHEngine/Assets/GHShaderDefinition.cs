@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class GHShaderDefinition : AssetDefinition
+public class GHShaderDefinition : GHSinglePathAssetDefinition
 {
     // Constructors.
-    public GHShaderDefinition(string name) : base(AssetType.Shader, name) { }
+    public GHShaderDefinition(string name, string path) : base(AssetType.Shader, name, path) { }
 }

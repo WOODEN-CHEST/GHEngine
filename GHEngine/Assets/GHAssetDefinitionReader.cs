@@ -28,6 +28,8 @@ public class GHAssetDefinitionReader : IAssetDefinitionReader
     private const string KEY_NAME_LOCAL = "name_local";
     private const string KEY_NAME_ENGLISH = "name_english";
 
+    private const string KEY_PATH = "path";
+
 
     // Private fields.
     private JSONDeserializer _deserializer = new();
@@ -131,7 +133,11 @@ public class GHAssetDefinitionReader : IAssetDefinitionReader
         return new Rectangle(X, Y, Width, Height);
     }
 
-    private AssetDefinition ReadSound(string name, JSONCompound soundCompound) => new GHSoundDefinition(name);
+    private AssetDefinition ReadSound(string name, JSONCompound soundCompound)
+    {
+        new GHSoundDefinition(name);
+    }
+
 
     private AssetDefinition ReadSong(string name, JSONCompound soundCompound) => new GHSongDefinition(name);
 

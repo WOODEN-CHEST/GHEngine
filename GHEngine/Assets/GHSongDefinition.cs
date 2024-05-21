@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class GHSongDefinition : AssetDefinition
+public class GHSongDefinition : GHSinglePathAssetDefinition
 {
     // Constructors.
-    public GHSongDefinition(string name) : base(AssetType.Song, name) { }
+    public GHSongDefinition(string name, string path) : base(AssetType.Song, name, path) { }
 }

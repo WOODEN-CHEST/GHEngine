@@ -123,7 +123,7 @@ public class ZIndexedCollection<T> : IEnumerable<T>
     }
 
 
-    // Classes.
+    // Types.
     private struct ZBufferedItem<V>
     {
         // Fields.

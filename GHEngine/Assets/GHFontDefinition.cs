@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class GHFontDefinition : AssetDefinition
+public class GHFontDefinition : GHSinglePathAssetDefinition
 {
     // Constructors.
-    public GHFontDefinition(string name) : base(AssetType.Font, name) { }
+    public GHFontDefinition(string name, string path) : base(AssetType.Font, name, path) { }
 }

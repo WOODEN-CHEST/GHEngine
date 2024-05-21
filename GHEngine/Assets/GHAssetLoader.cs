@@ -60,7 +60,7 @@ public class GHAssetLoader : IAssetLoader
         {
             foreach (string FrameName in definition.Frames)
             {
-                string CorrectedFrameName = FormatPath(Path.Combine(definition.Type.RootPathName, definition.Name));
+                string CorrectedFrameName = FormatPath(Path.Combine(definition.Type.RootPathName, FrameName));
                 Texture2D Original = _monogameContentManager.Load<Texture2D>(CorrectedFrameName);
                 Frames.Add(CreateTextureCopy(Original));
                 _monogameContentManager.UnloadAsset(CorrectedFrameName);
@@ -78,7 +78,7 @@ public class GHAssetLoader : IAssetLoader
     public SpriteFont LoadFont(GHFontDefinition definition)
     {
         SpriteFont Original;
-        string TargetPath = FormatPath(Path.Combine(definition.Type.RootPathName, definition.Name));
+        string TargetPath = FormatPath(Path.Combine(definition.Type.RootPathName, definition.AssetPath));
         try
         {
             Original = _monogameContentManager.Load<SpriteFont>(TargetPath);
@@ -101,7 +101,7 @@ public class GHAssetLoader : IAssetLoader
     public Effect LoadShader(GHShaderDefinition definition)
     {
         SpriteEffect Original;
-        string TargetPath = FormatPath(Path.Combine(definition.Type.RootPathName, definition.Name));
+        string TargetPath = FormatPath(Path.Combine(definition.Type.RootPathName, definition.AssetPath));
         try
         {
             Original = _monogameContentManager.Load<SpriteEffect>(TargetPath);
@@ -119,7 +119,7 @@ public class GHAssetLoader : IAssetLoader
     public ILanguage LoadLanguage(GHLanguageDefinition definition)
     {
         ILanguage Language = new GHLanguage(definition.LanguageNameLocal, definition.LanguageNameEnglish);
-        _languageReader.Read(Language, Path.Combine(AssetDirectory, definition.Type.RootPathName, definition.Name));
+        _languageReader.Read(Language, Path.Combine(AssetDirectory, definition.Type.RootPathName, definition.AssetPath));
         return Language;
     }
 
@@ -143,7 +143,7 @@ public class GHAssetLoader : IAssetLoader
 
 
     // Private methods.
-    private ISound LoadAudio(AssetDefinition definition)
+    private ISound LoadAudio(GHSinglePathAssetDefinition definition)
     {
         AudioFileReader Reader = null!;
         
@@ -151,7 +151,7 @@ public class GHAssetLoader : IAssetLoader
         try
         {
             Reader = new(Path.ChangeExtension(
-                Path.Combine(AssetDirectory, definition.Type.RootPathName, definition.Name), AUDIO_FILE_EXTENSION));
+                Path.Combine(AssetDirectory, definition.Type.RootPathName, definition.AssetPath), AUDIO_FILE_EXTENSION));
             {
                 Sampler = Reader.ToSampleProvider();
             }

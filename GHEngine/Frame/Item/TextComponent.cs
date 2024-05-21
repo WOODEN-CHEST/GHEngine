@@ -109,7 +109,9 @@ public class TextComponent : IColorMaskable
     // Methods.
     public Vector2 CalculateDrawSize(string text)
     {
+        // As long as the MeasureString method of MonoGame measures the Y size by using LineSpacing, this should work.
+        // If that changes, then a lot of stuff will break.
         return new Vector2(_font.MeasureString(text).X / Font.LineSpacing * ONE_UNIT_SIZE * FontSize,
-                    FontSize * ONE_UNIT_SIZE);
+                    FontSize * ONE_UNIT_SIZE); 
     }
 }

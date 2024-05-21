@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections;
-
+using System.Text;
 
 namespace GHEngine.Frame.Item;
 
@@ -17,6 +17,18 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     public Vector2 Origin { get; set; }
     public Vector2 Bounds { get; set; }
     public TextAlignOption Alignment { get; set; }
+
+    public int Length
+    {
+        get
+        {
+            if (_cachedText == null)
+            {
+                CacheText();
+            }
+            return _cachedText!.Length;
+        }
+    }
 
     public float Brightness
     {
@@ -37,7 +49,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     }
 
     public TextComponent[] Components => _components.ToArray();
-    public int Count => _components.Count;
+    public int ComponentCount => _components.Count;
 
     public int MaxCharacters
     {
@@ -83,33 +95,40 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     private int _maxCharacters = int.MaxValue;
     private bool _allowNewlines = true;
     private Vector2? _cachedDrawSize = null;
+    private List<DrawLine>? _drawLines = new();
+
+    private string? _cachedText = null;
 
 
     // Constructors.
-    public TextBox()
-    {
-
-    }
+    public TextBox() { }
 
 
     // Methods.
-    public TextBox Append(TextComponent component)
+    public TextBox Add(TextComponent component)
     {
-        SubscribeToComponent(component);
+        OnComponentAdd(component);
         _components.Add(component);
+        return this;
+    }
+
+    public TextBox Insert(TextComponent component, int index)
+    {
+        _components.Insert(index, component);
+        OnComponentAdd(component);
         return this;
     }
 
     public TextBox Remove(TextComponent component)
     {
-        UnsubscribeFromComponent(component);
+        OnComponentRemove(component);
         _components.Remove(component);
         return this;
     }
 
-    public TextBox Remove(int index)
+    public TextBox RemoveAt(int index)
     {
-        UnsubscribeFromComponent(_components[index]);
+        OnComponentRemove(_components[index]);
         _components.RemoveAt(index);
         return this;
     }
@@ -118,7 +137,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     {
         foreach (TextComponent Component in _components)
         {
-            UnsubscribeFromComponent(Component);
+            OnComponentRemove(Component);
         }
         _components.Clear();
         return this;
@@ -126,35 +145,15 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
 
     // Private methods.
-    private Vector2 GetTotalLineSize(Vector2 totalLineSize, Vector2 lineSize)
-    {
-        return new Vector2(Math.Max(totalLineSize.X, lineSize.X), totalLineSize.Y + lineSize.Y);
-    }
-
     private void UpdateDrawSize()
     {
         Vector2 TotalDrawSize = Vector2.Zero;
-        Vector2 LineDrawSize = Vector2.Zero;
-
-        foreach (TextComponent Component in _components)
+        UpdateDrawLines();
+        foreach (DrawLine Line in _drawLines!)
         {
-            string[] TextLines = Component.Text.Split('\n');
-
-            for (int i = 0; i < TextLines.Length; i++)
-            {
-                if (i > 0)
-                {
-                    TotalDrawSize = GetTotalLineSize(TotalDrawSize, LineDrawSize);
-                    LineDrawSize = Vector2.Zero;
-                }
-
-                Vector2 SplitLineSize = Component.CalculateDrawSize(TextLines[i]);
-                LineDrawSize.X += SplitLineSize.X;
-                LineDrawSize.Y += Math.Max(LineDrawSize.Y, SplitLineSize.Y);
-            }
+            TotalDrawSize.X = Math.Max(TotalDrawSize.X, Line.DrawSize.X);
+            TotalDrawSize.Y += Line.DrawSize.Y;
         }
-
-        _cachedDrawSize = GetTotalLineSize(TotalDrawSize, LineDrawSize);
     }
 
     private void EnsureCharacterCount()
@@ -190,22 +189,58 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         }
     }
 
-    private void SubscribeToComponent(TextComponent component)
+    private void CacheText()
     {
-        component.TextChange += OnComponentTextChangeEvent;
-        component.FontChange += OnComponentFontChangeEvent;
-        component.FontSizeChange += OnComponentFontSizeChangeEvent;
+        StringBuilder CombinedString = new();
+
+        foreach (TextComponent Component in _components)
+        {
+            CombinedString.Append(Component.Text);
+        }
+
+        _cachedText = CombinedString.ToString();
     }
 
-    private void UnsubscribeFromComponent(TextComponent component)
+    private void UpdateDrawLines()
     {
-        component.TextChange -= OnComponentTextChangeEvent;
-        component.FontChange -= OnComponentFontChangeEvent;
-        component.FontSizeChange += OnComponentFontSizeChangeEvent;
+        if (_drawLines != null)
+        {
+            return;
+        }
+
+        _drawLines = new() { new DrawLine() };
+
+        foreach (TextComponent Component in _components)
+        {
+            string[] Lines = Component.Text.Split('\n');
+
+            for (int i = 0; i < Lines.Length; i++)
+            {
+                if (i > 0)
+                {
+                    _drawLines.Add(new DrawLine());
+                }
+
+                _drawLines[^1].Components.Add(new TextComponent(Component.Font, Lines[i])
+                {
+                    Mask = Component.Mask,
+                    Brightness = Component.Brightness,
+                    Opacity = Component.Opacity,
+                    FontSize = Component.FontSize
+                });
+            }
+        }
+
+        foreach (DrawLine Line in _drawLines)
+        {
+            Line.UpdateDrawSize();
+        }
     }
 
     private void OnComponentTextChangeEvent(object? sender, TextComponentArgs args)
     {
+        _cachedText = null;
+        _drawLines = null;
         if (!AllowNewlines)
         {
             EnsureNoNewlines();
@@ -223,16 +258,64 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         _cachedDrawSize = null;
     }
 
+    private void OnComponentAdd(TextComponent component)
+    {
+        component.TextChange += OnComponentTextChangeEvent;
+        component.FontChange += OnComponentFontChangeEvent;
+        component.FontSizeChange += OnComponentFontSizeChangeEvent;
+
+        _cachedText = null;
+        _cachedDrawSize = null;
+        _drawLines = null;
+    }
+
+    private void OnComponentRemove(TextComponent component)
+    {
+        component.TextChange -= OnComponentTextChangeEvent;
+        component.FontChange -= OnComponentFontChangeEvent;
+        component.FontSizeChange += OnComponentFontSizeChangeEvent;
+
+        _cachedText = null;
+        _cachedDrawSize = null;
+        _drawLines = null;
+    }
 
     // Inherited methods.
     public void Render(IRenderer renderer, IProgramTime time)
     {
         Vector2 OriginCenter = DrawSize * Origin;
+        UpdateDrawLines();
 
-
-        foreach (TextComponent Component in _components)
+        float UsedYSpace = 0f;
+        foreach (DrawLine Line in _drawLines!)
         {
+            float UsedXSpace = 0f;
+            foreach (TextComponent Component in Line.Components)
+            {
+                Vector2 DrawPosition = Vector2.Zero;
+                DrawPosition.X = Alignment switch
+                {
+                    TextAlignOption.Left => (Position.X - OriginCenter.X) + UsedXSpace,
+                    TextAlignOption.Center => (Position.X - OriginCenter.X) + ((DrawSize.X - Line.DrawSize.X) * 0.5f) + UsedXSpace,
+                    TextAlignOption.Right => (Position.X - OriginCenter.X) + DrawSize.X - Line.DrawSize.X + UsedXSpace,
+                    _ => throw new EnumValueException(nameof(Alignment), Alignment)
+                };
+                DrawPosition.Y = Position.Y - OriginCenter.Y + UsedYSpace;
 
+                Vector2 RelativeRotationOrigin = (Position - OriginCenter) - DrawPosition;
+                GenericColorMask ColorMask = new()
+                {
+                    Mask = Component.Mask,
+                    Brightness = Component.Brightness,
+                    Opacity = Component.Opacity
+                };
+
+                renderer.DrawString(Component.Font, Component.Text, DrawPosition, ColorMask.CombinedMask, Rotation,
+                    RelativeRotationOrigin, Vector2.One, Effects, Shader);
+
+                UsedXSpace += Component.DrawSize.X;
+            }
+            UsedYSpace += Line.DrawSize.Y;
         }
     }
 
@@ -251,7 +334,11 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
     public override string ToString()
     {
-        throw new NotImplementedException();
+        if (_cachedText == null)
+        {
+            CacheText();
+        }
+        return _cachedText!;
     }
 
 
@@ -261,9 +348,34 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         get => _components[index];
         set
         {
-            UnsubscribeFromComponent(_components[index]);
-            SubscribeToComponent(value);
+            OnComponentRemove(_components[index]);
+            OnComponentAdd(value);
             _components[index] = value;
+        }
+    }
+
+
+    // Types.
+    private class DrawLine
+    {
+        // Fields.
+        public List<TextComponent> Components { get; private set; }
+        public Vector2 DrawSize { get; private set; }
+
+
+        // Methods.
+        public void UpdateDrawSize()
+        {
+            Vector2 LineSize = Vector2.Zero;
+
+            foreach (TextComponent Component in Components)
+            {
+                Vector2 ComponentSize = Component.DrawSize;
+                LineSize.X += ComponentSize.X;
+                LineSize.Y = Math.Max(LineSize.Y, ComponentSize.Y);
+            }
+
+            DrawSize = LineSize;
         }
     }
 }

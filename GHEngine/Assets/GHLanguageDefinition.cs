@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets;
 
-public class GHLanguageDefinition : AssetDefinition
+public class GHLanguageDefinition : GHSinglePathAssetDefinition
 {
     // Fields.
     public string LanguageNameEnglish { get; private init; }
@@ -14,8 +14,8 @@ public class GHLanguageDefinition : AssetDefinition
 
 
     // Constructors.
-    public GHLanguageDefinition(string name, string languageNameEnglish, string languageNameLocal)
-        : base(AssetType.Language, name)
+    public GHLanguageDefinition(string name, string path, string languageNameEnglish, string languageNameLocal)
+        : base(AssetType.Language, name, path)
     {
         LanguageNameEnglish = languageNameEnglish ?? throw new ArgumentNullException(nameof(languageNameEnglish));
         LanguageNameLocal = languageNameLocal ?? throw new ArgumentNullException(nameof(languageNameLocal));
