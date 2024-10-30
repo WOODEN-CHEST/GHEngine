@@ -18,10 +18,10 @@ public interface IDisplay
 
     // Fields.
     float TargetAspectRatio { get; set; }
-    WindowSize WindowedSize { get; set; }
-    WindowSize FullScreenSize { get; set; }
-    WindowSize CurrentWindowSize { get; set; }
-    WindowSize ScreenSize { get; }
+    IntVector WindowedSize { get; set; }
+    IntVector FullScreenSize { get; set; }
+    IntVector CurrentWindowSize { get; set; }
+    IntVector ScreenSize { get; }
     bool IsFullScreen { get; set; }
     bool IsUserResizingAllowed { get; set; }
 

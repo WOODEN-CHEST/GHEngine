@@ -4,10 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine;
+namespace GHEngine.Audio;
 
-public interface IProgramStatistics
+public interface IAudioModifier
 {
-    double FPS { get; }
-    ulong RamUsageBytes { get; }
+    // Fields.
+
+
+
+    // Methods.
+    
 }

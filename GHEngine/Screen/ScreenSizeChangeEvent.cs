@@ -10,11 +10,11 @@ namespace GHEngine.Screen;
 public class ScreenSizeChangeEventArgs : EventArgs
 {
     // Fields.
-    public WindowSize NewSize { get; private init; }
+    public IntVector NewSize { get; private init; }
 
 
     // Constructors.
-    public ScreenSizeChangeEventArgs(WindowSize newSize)
+    public ScreenSizeChangeEventArgs(IntVector newSize)
     {
         NewSize = newSize;
     }

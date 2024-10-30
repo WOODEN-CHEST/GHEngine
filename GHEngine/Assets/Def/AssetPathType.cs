@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine;
+namespace GHEngine.Assets.Def;
 
-public interface IProgramStatistics
+public enum AssetPathType
 {
-    double FPS { get; }
-    ulong RamUsageBytes { get; }
+    FileSystem,
+    Memory
 }

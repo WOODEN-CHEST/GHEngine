@@ -110,6 +110,7 @@ public class DVector3
         return (X * X) + (Y * Y) + (Z * Z);
     }
 
+
     // Inherited methods.
     public override bool Equals(object? obj)
     {

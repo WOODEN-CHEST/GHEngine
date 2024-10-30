@@ -8,12 +8,15 @@ namespace GHEngine.Logging;
 
 public interface ILogger : IDisposable
 {
-    void Info(string message);
+    // Fields.
+    event EventHandler<LoggerLogEventArgs>? LogMessage;
 
+
+    // Methods.
+    void Info(string message);
     void Warning(string message);
     void Error(string message);
-
     void Critical(string message);
-
     void Log(LogLevel level, string message);
+    string ConvertToLoggedMessage(LogLevel level, DateTime timeStamp, string message);
 }

@@ -11,7 +11,7 @@ internal class MissingLanguage : ILanguage
     // Fields.
     public string NameLocal => "Missing Language";
 
-    public string NameEnglish => "";
+    public string NameEnglish => "Missing Language";
 
 
     // Methods.

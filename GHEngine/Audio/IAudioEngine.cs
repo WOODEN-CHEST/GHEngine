@@ -17,6 +17,8 @@ public interface IAudioEngine : IDisposable, ISampleProvider
     TimeSpan ExecutionTime { get; }
     ISoundInstance[] Sounds { get; }
 
+    //event EventHandler<SampleRequestEventArgs> SampleRequest;
+
 
 
     // Methods.

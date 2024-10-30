@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.IO.Compression;
+using System.Reflection.Emit;
 using System.Text;
 
 namespace GHEngine.Logging;
@@ -8,29 +9,35 @@ namespace GHEngine.Logging;
 public class GHLogger : ILogger
 {
     // Internal static fields.
-    public string LogPath { get; private set; }
+    public event EventHandler<LoggerLogEventArgs>? LogMessage;
 
 
     // Private fields.
-    private StreamWriter s_fileWriter;
+    private readonly StreamWriter _fileWriter;
+    private readonly bool _openedStream;
+    private bool _isDisposed;
 
 
     // Constructors.
     public GHLogger(string filePath)
     {
-        LogPath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-        if (!Path.IsPathFullyQualified(LogPath))
+        ArgumentNullException.ThrowIfNull(filePath, nameof(filePath));
+        if (!Path.IsPathFullyQualified(filePath))
         {
             throw new ArgumentException("Path not fully qualified.", nameof(filePath));
         }
-        File.Delete(LogPath);
+        File.Delete(filePath);
 
-        Directory.CreateDirectory(Path.GetDirectoryName(LogPath) ?? LogPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? filePath);
+        _fileWriter = new StreamWriter(File.Open(filePath, FileMode.OpenOrCreate));
+        _openedStream = true;
 
-        DateTime Time = DateTime.Now;
-        s_fileWriter = new StreamWriter(File.Open(LogPath, FileMode.OpenOrCreate));
-        s_fileWriter.Write($"Program instance started on {GetFormattedDate(Time)} at {GetFormattedTime(Time)}. " +
-            $"Log generated in \"{LogPath}\"");
+    }
+
+    public GHLogger(Stream fileStream)
+    {
+        _fileWriter = new StreamWriter(fileStream ?? throw new ArgumentNullException(nameof(fileStream)));
+        _openedStream = false;
     }
 
 
@@ -38,10 +45,6 @@ public class GHLogger : ILogger
     private string GetFormattedTime(DateTime time)
     {
         return $"{TwoDigitNumberToString(time.Hour)};{TwoDigitNumberToString(time.Minute)};{TwoDigitNumberToString(time.Second)}";
-    }
-    private string GetFormattedDate(DateTime date)
-    {
-        return $"{date.Year}y{TwoDigitNumberToString(date.Month)}m{TwoDigitNumberToString(date.Day)}d";
     }
 
     private string TwoDigitNumberToString(int number)
@@ -61,17 +64,33 @@ public class GHLogger : ILogger
 
     public void Log(LogLevel level, string message)
     {
-        if (message == null)
+        lock (this)
         {
-            throw new ArgumentNullException(message);
-        }
+            ArgumentNullException.ThrowIfNullOrEmpty(message, nameof(message));
+            LoggerLogEventArgs Args = new(level, message, DateTime.Now);
+            LogMessage?.Invoke(this, Args);
 
-        string FullMessage = $"\n[{GetFormattedTime(DateTime.Now)}{(level == LogLevel.Info ? ' ' : $"[{level}]")} {message}]";
-        s_fileWriter.Write(FullMessage);
+            _fileWriter.Write(ConvertToLoggedMessage(Args.Level, Args.TimeStamp, Args.Message));
+            _fileWriter.Flush();
+        }
+    }
+
+    public string ConvertToLoggedMessage(LogLevel level, DateTime timeStamp, string message)
+    {
+        return $"\n[{GetFormattedTime(timeStamp)}{(level == LogLevel.Info ? null : $"[{level}]")} {message}]";
     }
 
     public void Dispose()
     {
-        s_fileWriter?.Dispose();
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        if (_openedStream)
+        {
+            _fileWriter?.Dispose();
+        }
+        _isDisposed = true;
     }
 }

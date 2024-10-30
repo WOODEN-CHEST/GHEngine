@@ -1,24 +1,18 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GHEngine.Screen;
 
 public class GHDisplay : IDisplay
 {
     // Private static fields.
-    private static WindowSize MIN_SIZE => new(50, 50);
+    private static IntVector MIN_SIZE => new(50, 50);
 
 
     // Fields.
     public float TargetAspectRatio { get; set; }
 
-    public WindowSize WindowedSize
+    public IntVector WindowedSize
     {
         get => _windowedSize;
         set
@@ -32,7 +26,7 @@ public class GHDisplay : IDisplay
         }
     }
 
-    public WindowSize FullScreenSize
+    public IntVector FullScreenSize
     {
         get => _fullScreenSize;
         set
@@ -65,12 +59,12 @@ public class GHDisplay : IDisplay
         set => _window.AllowUserResizing = value;
     }
 
-    public WindowSize CurrentWindowSize
+    public IntVector CurrentWindowSize
     {
-        get => new WindowSize(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+        get => new IntVector(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
         set
         {
-            WindowSize NewSize = ClampSize(value);
+            IntVector NewSize = ClampSize(value);
             if (NewSize != CurrentWindowSize)
             {
                 UpdateDisplay(NewSize, IsFullScreen);
@@ -78,12 +72,12 @@ public class GHDisplay : IDisplay
         }
     }
 
-    public WindowSize ScreenSize
+    public IntVector ScreenSize
     {
         get
         {
             DisplayMode Mode = _graphics.GraphicsDevice.Adapter.CurrentDisplayMode;
-            return new WindowSize(Mode.Width, Mode.Height);
+            return new IntVector(Mode.Width, Mode.Height);
         }
     }
 
@@ -91,8 +85,8 @@ public class GHDisplay : IDisplay
 
 
     // Private fields.
-    private WindowSize _windowedSize;
-    private WindowSize _fullScreenSize;
+    private IntVector _windowedSize;
+    private IntVector _fullScreenSize;
     private readonly GraphicsDeviceManager _graphics;
     private GameWindow _window;
 
@@ -107,7 +101,7 @@ public class GHDisplay : IDisplay
         _window = window ?? throw new ArgumentNullException(nameof(window));
         window.ClientSizeChanged += OnWindowSizeChangeEvent;
 
-        WindowedSize = new WindowSize(ScreenSize.X / 2, ScreenSize.Y / 2);
+        WindowedSize = new IntVector(ScreenSize.X / 2, ScreenSize.Y / 2);
         IsFullScreen = false;
         UpdateVirtualProperties();
     }
@@ -131,7 +125,6 @@ public class GHDisplay : IDisplay
 
     private void UpdateVirtualProperties()
     {
-
         float WindowAspectRatio = (float)CurrentWindowSize.X / (float)CurrentWindowSize.Y;
         if (WindowAspectRatio >= TargetAspectRatio)
         {
@@ -144,7 +137,7 @@ public class GHDisplay : IDisplay
         _padding = new Vector2(CurrentWindowSize.X - _virtualSize.X, CurrentWindowSize.Y - _virtualSize.Y) * 0.5f;
     }
 
-    private void UpdateDisplay(WindowSize size, bool isFullScreen)
+    private void UpdateDisplay(IntVector size, bool isFullScreen)
     {
         _graphics.IsFullScreen = isFullScreen;
         _graphics.PreferredBackBufferWidth = size.X;
@@ -152,9 +145,9 @@ public class GHDisplay : IDisplay
         _graphics.ApplyChanges();
     }
 
-    private WindowSize ClampSize(WindowSize size)
+    private IntVector ClampSize(IntVector size)
     {
-        return new WindowSize(Math.Max(size.X, MIN_SIZE.X), Math.Max(size.Y, MIN_SIZE.Y));
+        return new IntVector(Math.Max(size.X, MIN_SIZE.X), Math.Max(size.Y, MIN_SIZE.Y));
     }
 
     // Inherited methods.

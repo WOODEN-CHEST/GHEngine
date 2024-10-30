@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Translatable;
 
-public class LanguageReadException : Exception
+public class LanguageReadException : IOException
 {
     public LanguageReadException(string message) : base(message) { }
 }

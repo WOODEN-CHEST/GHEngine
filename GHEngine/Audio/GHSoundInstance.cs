@@ -18,9 +18,9 @@ public class GHSoundInstance : ISoundInstance
     public const float PAN_RIGHT = 1f;
     public const float VOLUME_MIN = 0f;
     public const float VOLUME_MAX = 1000f;
-    public const double SPEED_MIN = -10;
+    public const double SPEED_MIN = -1000;
     public const double SPEED_DEFAULT = 1d;
-    public const double SPEED_MAX = 10d;
+    public const double SPEED_MAX = 1000d;
 
 
     // Fields.
@@ -260,6 +260,11 @@ public class GHSoundInstance : ISoundInstance
         return SourceIndex;
     }
 
+    private void ApplyEffects(float[] buffer, int sampleCount, SoundInstanceProperties properties)
+    {
+
+    }
+
 
     // Inherited methods.
     public void GetSamples(float[] buffer, int sampleCount)
@@ -308,7 +313,7 @@ public class GHSoundInstance : ISoundInstance
 
         catch (IndexOutOfRangeException e)
         {
-            // Yes, under normal circumstances this should not happen. 
+            // Yes, under normal circumstances this should not happen, but still must add this line here to make sure.
             throw new InvalidOperationException($"Corrupted audio data which caused index to become out of bounds. {e}");
         }
     }

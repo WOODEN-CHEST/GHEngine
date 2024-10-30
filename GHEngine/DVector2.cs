@@ -9,6 +9,13 @@ namespace GHEngine;
 
 public struct DVector2
 {
+    // Static fields.
+    public static DVector2 UnitX { get; } = new DVector2(1d, 0d);
+    public static DVector2 UnitY { get; } = new DVector2(0d, 1d);
+    public static DVector2 One { get; } = new DVector2(1d, 1d);
+    public static DVector2 Zero { get; } = new DVector2(0d, 0d);
+
+
     // Fields.
     public double X { get; set; }
     public double Y { get; set; }
@@ -80,6 +87,16 @@ public struct DVector2
         NewVector.X = (vector.X * matrix.M11) + (vector.Y * matrix.M12);
         NewVector.Y = (vector.X * matrix.M21) + (vector.Y * matrix.M22);
         return NewVector;
+    }
+
+    public static double Distance(DVector2 a, DVector2 b)
+    {
+        return (b - a).Length;
+    }
+
+    public static double DistanceSquared(DVector2 a, DVector2 b)
+    {
+        return (b - a).LengthSquared;
     }
 
 

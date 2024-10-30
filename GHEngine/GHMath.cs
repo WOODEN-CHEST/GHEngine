@@ -109,7 +109,7 @@ public static class GHMath
         return (MinX <= RotatedPoint.X) && (RotatedPoint.X <= MaxX) && (MinY <= RotatedPoint.Y) && (RotatedPoint.Y <= MaxY);
     }
 
-    public static bool IsPointInArea(DVector2 point, DVector2 areaCorner1, DVector2 areaCorner2, float areaRotation)
+    public static bool IsPointInArea(DVector2 point, DVector2 areaCorner1, DVector2 areaCorner2, double areaRotation)
     {
         double MinX = Math.Min(areaCorner1.X, areaCorner2.X);
         double MinY = Math.Min(areaCorner1.Y, areaCorner2.Y);

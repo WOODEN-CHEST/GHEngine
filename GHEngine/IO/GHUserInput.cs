@@ -45,6 +45,7 @@ public class GHUserInput : IUserInput
     {
         set => Mouse.SetCursor(value);
     }
+    public IntVector InputAreaSizePixels { get; set; }
 
     public event EventHandler<TextInputEventArgs>? TextInput;
     public event EventHandler<FileDropEventArgs>? FileDrop;
