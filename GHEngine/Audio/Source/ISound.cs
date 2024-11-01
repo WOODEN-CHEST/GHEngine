@@ -5,12 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine.Audio;
+namespace GHEngine.Audio.Source;
 
-public interface ISoundSampleBuffer
+public interface ISound
 {
     // Fields.
     WaveFormat Format { get; }
-    float this[int index] { get; }
-    float this[double index] { get; }
+
+
+    // Methods.
+    public ISoundInstance CreateInstance();
 }

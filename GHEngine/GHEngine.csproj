@@ -18,6 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Audio\Modifier\PanSoundModifier.cs" />
+    <Compile Remove="Audio\Source\GHSoundInstanceOld.cs" />
     <Compile Remove="Frame\Item\KeyframeCollection.cs" />
     <Compile Remove="Frame\Item\PropertyAnimation.cs" />
     <Compile Remove="Frame\Item\PropertyAnimManager.cs" />

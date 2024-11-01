@@ -8,14 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Tests.Audio;
 
-namespace GHEngine.Audio;
+namespace GHEngine.Audio.Source;
 
-public class GHSoundInstance : ISoundInstance
+public class GHSoundInstanceOld : ISoundInstance
 {
     // Static fields.
-    public const float PAN_LEFT = -1f;
-    public const float PAN_MIDDLE = 0f;
-    public const float PAN_RIGHT = 1f;
+
     public const float VOLUME_MIN = 0f;
     public const float VOLUME_MAX = 1000f;
     public const double SPEED_MIN = -1000;
@@ -24,7 +22,7 @@ public class GHSoundInstance : ISoundInstance
 
 
     // Fields.
-    public ISound Sound { get; private init; }
+    public IPreSampledSound Sound { get; private init; }
 
     public TimeSpan CurrentTime
     {
@@ -86,7 +84,7 @@ public class GHSoundInstance : ISoundInstance
 
     public float Pan
     {
-        get 
+        get
         {
             lock (this) { return _properties.Pan; }
         }
@@ -94,7 +92,7 @@ public class GHSoundInstance : ISoundInstance
         {
             lock (this)
             {
-                _properties.Pan = Math.Clamp(value, PAN_LEFT,  PAN_RIGHT);
+                _properties.Pan = Math.Clamp(value, PAN_LEFT, PAN_RIGHT);
             }
         }
     }
@@ -165,7 +163,7 @@ public class GHSoundInstance : ISoundInstance
 
 
     // Constructors.
-    internal GHSoundInstance(ISound sound)
+    internal GHSoundInstanceOld(IPreSampledSound sound)
     {
         Sound = sound ?? throw new ArgumentNullException(nameof(sound));
         _properties = new();
@@ -176,7 +174,7 @@ public class GHSoundInstance : ISoundInstance
     // Private methods.
     private void EnsureFilterCount()
     {
-        if ((_filters == null) || (_filters.Length != Sound.Format.Channels))
+        if (_filters == null || _filters.Length != Sound.Format.Channels)
         {
             _filters = new BiQuadFilter[Sound.Format.Channels];
             for (int i = 0; i < _filters.Length; i++)
@@ -188,28 +186,7 @@ public class GHSoundInstance : ISoundInstance
 
     private void PanPass(float[] buffer, int count, float pan)
     {
-        if (Sound.Format.Channels != 2)
-        {
-            throw new NotSupportedException("Panning not supported for non 2 channel sounds.");
-        }
 
-        const float MAX_VOLUME_BOOST = 0.3f; // Account for perceived loudness, however, it is still basically a random value.
-
-        float PanLeftStrength = Math.Abs(Math.Min(pan, 0));
-        float PanRightStrength = Math.Max(pan, 0);
-
-        float RightVolumeInLeft = PanLeftStrength + (PanLeftStrength * MAX_VOLUME_BOOST);
-        float LeftVolumeInRight = PanRightStrength + (PanRightStrength * MAX_VOLUME_BOOST);
-        float LeftVolumeInLeft = 1f + (PanLeftStrength * MAX_VOLUME_BOOST) - (PanRightStrength);
-        float RightVolumeInRight = 1f + (PanRightStrength * MAX_VOLUME_BOOST) - (PanLeftStrength);
-
-        for (int i = 0; i < count; i += 2)
-        {
-            float LeftSample = buffer[i];
-            float RightSample = buffer[i + 1];
-            buffer[i] = (LeftSample * LeftVolumeInLeft) + (RightSample * RightVolumeInLeft);
-            buffer[i + 1] = (RightSample * RightVolumeInRight) + (LeftSample * LeftVolumeInRight);
-        }
     }
 
 
@@ -222,7 +199,7 @@ public class GHSoundInstance : ISoundInstance
 
         for (int BufferIndex = 0; BufferIndex < count;)
         {
-            for (int FilterIndex = 0; (FilterIndex < _filters.Length) && (BufferIndex < count);
+            for (int FilterIndex = 0; FilterIndex < _filters.Length && BufferIndex < count;
                 FilterIndex++, BufferIndex++)
             {
                 buffer[BufferIndex] = _filters[FilterIndex].Transform(buffer[BufferIndex]);
@@ -234,8 +211,8 @@ public class GHSoundInstance : ISoundInstance
     /* Reading. */
     private float GetSingleSample(double index, int channelIndex, bool isLooped)
     {
-        double MaxIndex = Sound.SingleChannelSampleCount - 1d;
-        double ClampedIndex = isLooped ? index % (Sound.SingleChannelSampleCount - 1d) : index;
+        double MaxIndex = Sound.ChannelSampleCount - 1d;
+        double ClampedIndex = isLooped ? index % (Sound.ChannelSampleCount - 1d) : index;
         double LowerIndex = Math.Floor(ClampedIndex);
         double UpperIndex = Math.Ceiling(ClampedIndex);
 
@@ -250,7 +227,7 @@ public class GHSoundInstance : ISoundInstance
         double SourceIndex = sourceIndex;
         for (int BufferIndex = 0; BufferIndex < count; SourceIndex += speed)
         {
-            for (int ChannelIndex = 0; (ChannelIndex < Sound.Format.Channels) && (BufferIndex < count);
+            for (int ChannelIndex = 0; ChannelIndex < Sound.Format.Channels && BufferIndex < count;
                 ChannelIndex++, BufferIndex++)
             {
                 buffer[BufferIndex] = GetSingleSample(SourceIndex, ChannelIndex, isLooped) * volume;
@@ -270,11 +247,11 @@ public class GHSoundInstance : ISoundInstance
     public void GetSamples(float[] buffer, int sampleCount)
     {
         SoundInstanceProperties CurrentProperties;
-        lock (this) 
+        lock (this)
         {
             CurrentProperties = _properties;
         }
-        
+
         try
         {
             double NewIndex = ReadSamples(buffer, CurrentProperties.Index, sampleCount, CurrentProperties.Volume,

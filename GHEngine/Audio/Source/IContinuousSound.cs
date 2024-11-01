@@ -4,13 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine.Audio;
+namespace GHEngine.Audio.Source;
 
-public interface ISoundSampler
+public interface IContinuousSound : ISound
 {
-    // Fields.
-
-
     // Methods.
-    public void Read(float[] buffer, int count);
+    void FeedSamples(float[] samples);
 }

@@ -1,10 +1,8 @@
-﻿using GHEngine.Collections;
+﻿using GHEngine.Audio.Source;
+using GHEngine.Collections;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 
 namespace GHEngine.Audio;
@@ -13,7 +11,7 @@ namespace GHEngine.Audio;
 public class GHAudioEngine : IAudioEngine
 {
     // Fields.
-    public WaveFormat WaveFormat => _format;
+    public WaveFormat WaveFormat { get; private init; }
     public int AudioLatency { get; private init; }
     public int MaxSounds
     {
@@ -28,7 +26,7 @@ public class GHAudioEngine : IAudioEngine
         {
             lock (this)
             {
-                _maxSounds = value;
+                _maxSounds = Math.Max(0, value);
             }
         }
     }
@@ -88,7 +86,6 @@ public class GHAudioEngine : IAudioEngine
 
 
     // Private static fields.
-    private readonly WaveFormat _format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
     private readonly WasapiOut _outputDevice;
 
     private float _volume = 1f;
@@ -102,15 +99,14 @@ public class GHAudioEngine : IAudioEngine
 
 
     // Constructors.
-    internal GHAudioEngine(int targetAudioLatency)
+    public GHAudioEngine(int targetAudioLatency)
     {
         AudioLatency = targetAudioLatency;
         try
         {
             _outputDevice = new(AudioClientShareMode.Shared, true, targetAudioLatency);
-
-            _outputDevice.Init(this);
-            _outputDevice.Play();
+            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(_outputDevice.OutputWaveFormat.SampleRate,
+                _outputDevice.OutputWaveFormat.Channels);
             _soundBuffer = Array.Empty<float>();
         }
         catch (Exception e)
@@ -140,23 +136,11 @@ public class GHAudioEngine : IAudioEngine
 
     private void ReadSounds(float volume, float[] buffer, int offset, int count)
     {
-        if (_sounds.Count == 0)
-        {
-            FillBufferWithSilence(buffer, offset, count);
-            return;
-        }
+        FillBufferWithSilence(buffer, offset, count);
 
-        // Overwrite buffer data with the first sound.
-        _sounds[0].GetSamples(_soundBuffer, count);
-        for (int i = offset, Source = 0; i < (offset + count); i++, Source++)
+        for (int SoundIndex = 0; SoundIndex < _sounds.Count; SoundIndex++)
         {
-            buffer[i] = _soundBuffer[Source] * volume;
-        }
-
-        // Add remaining sounds.
-        for (int SoundIndex = 1; SoundIndex < _sounds.Count; SoundIndex++)
-        {
-            _sounds[SoundIndex].GetSamples(_soundBuffer, count);
+            _sounds[SoundIndex].GetSamples(_soundBuffer, count, WaveFormat);
             for (int Target = offset, Source = 0; Target < (offset + count); Target++, Source++)
             {
                 buffer[Target] += _soundBuffer[Source] * volume;
@@ -202,7 +186,6 @@ public class GHAudioEngine : IAudioEngine
     {
         try
         {
-            _executionMeasurer.Start();
 
             EnsureBuffer(count);
 
@@ -211,8 +194,12 @@ public class GHAudioEngine : IAudioEngine
             {
                 _sounds.ApplyChanges(); 
             }
+
+            _executionMeasurer.Reset();
+            _executionMeasurer.Start();
             ReadSounds(TargetVolume, buffer, offset, count);
             _executionMeasurer.Stop();
+
             lock (this)
             {
                 _executionTime = _executionMeasurer.Elapsed;
@@ -224,5 +211,16 @@ public class GHAudioEngine : IAudioEngine
             _outputDevice.Dispose();
             throw new Exception($"Exception in audio engine! {e}");
         }
+    }
+
+    public void Start()
+    {
+        _outputDevice.Init(this);
+        _outputDevice.Play();
+    }
+
+    public void Stop()
+    {
+        _outputDevice.Stop();
     }
 }

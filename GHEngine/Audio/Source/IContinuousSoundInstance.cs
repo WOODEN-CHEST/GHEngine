@@ -4,14 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine.Audio;
+namespace GHEngine.Audio.Source;
 
-public interface IAudioModifier
+public interface IContinuousSoundInstance : ISoundInstance
 {
-    // Fields.
 
-
-
-    // Methods.
-    
 }

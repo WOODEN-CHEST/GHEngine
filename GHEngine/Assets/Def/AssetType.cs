@@ -12,7 +12,6 @@ public readonly struct AssetType
     // Static fields.
     public static AssetType Animation { get; } = new("animation", "animation");
     public static AssetType Sound { get; } = new("sound", "sound");
-    public static AssetType Song { get; } = new("song", "song");
     public static AssetType Font { get; } = new("font", "font");
     public static AssetType Shader { get; } = new("shader", "shader");
     public static AssetType Language { get; } = new("language", "language");

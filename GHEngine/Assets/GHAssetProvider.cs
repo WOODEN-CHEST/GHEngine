@@ -15,10 +15,9 @@ public class GHAssetProvider : IAssetProvider
     // Private fields.
     private readonly IAssetLoader _assetLoader;
     private readonly ILogger _logger;
-    private readonly GraphicsDevice _graphics;
-    private readonly WaveFormat _audioFormat;
 
     private readonly IAssetDefinitionCollection _definitions;
+    private readonly Dictionary<AssetType, object> _defaultAssets = new();
     private readonly Dictionary<AssetType, Dictionary<string, GHGameAsset>> _assets = new();
     
 
@@ -26,37 +25,35 @@ public class GHAssetProvider : IAssetProvider
     // Constructors.
     public GHAssetProvider(IAssetLoader loader,
         IAssetDefinitionCollection definitions,
-        ILogger logger, 
-        GraphicsDevice graphics,
-        WaveFormat audioFormat)
+        ILogger logger)
     {
         _assetLoader = loader ?? throw new ArgumentNullException(nameof(loader));
         _definitions = definitions ?? throw new ArgumentNullException(nameof(_definitions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
-        _audioFormat = audioFormat ?? throw new ArgumentNullException(nameof(audioFormat));
     }
 
 
     // Private methods.
     private GHGameAsset? TryGetAsset(AssetType type, string name)
     {
-        if (!_assets.ContainsKey(type))
+        if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
         {
             return null;
         }
 
-        _assets[type].TryGetValue(name, out GHGameAsset? Asset);
+        AssetDictionary.TryGetValue(name, out GHGameAsset? Asset);
         return Asset;
     }
 
     private object? TryLoadAsset(AssetType type, string name)
     {
         AssetDefinition? Definition = _definitions.Get(type, name);
+        _defaultAssets.TryGetValue(type, out object? DefaultAsset);
+
         if (Definition == null)
         {
             _logger.Warning($"Attempted to load undefined asset \"{name}\" of type \"{type}\"");
-            return GetDefaultAsset(type);
+            return DefaultAsset;
         }
 
         try
@@ -66,40 +63,7 @@ public class GHAssetProvider : IAssetProvider
         catch (AssetLoadException e)
         {
             _logger.Warning(e.ToString());
-            return GetDefaultAsset(type);
-        }
-    }
-
-    private object? GetDefaultAsset(AssetType type)
-    {
-        if (type == AssetType.Animation)
-        {
-            Texture2D Texture = new Texture2D(_graphics, 2, 2, false, SurfaceFormat.ColorSRgb);
-            Texture.SetData(new Color[] { Color.HotPink, Color.Black, Color.Black, Color.HotPink });
-            return new GHSpriteAnimation(0d, 0, true, null, false, Texture);
-        }
-        else if ((type == AssetType.Sound) || (type == AssetType.Song))
-        {
-            return new GHSound(Enumerable.Repeat(0f, _audioFormat.Channels).ToArray(), _audioFormat);
-        }
-        else if (type == AssetType.Language)
-        {
-            return new MissingLanguage();
-        }
-        else if (type == AssetType.Shader)
-        {
-            return new SpriteEffect(_graphics);
-        }
-        else if (type == AssetType.Font)
-        {
-            Texture2D Texture = new Texture2D(_graphics, 1, 1, false, SurfaceFormat.ColorSRgb);
-            Texture.SetData(new Color[] { Color.White });
-            return new SpriteFont(Texture, new(), new(), new(), 0, 0, new(), 'h');
-        }
-        else
-        {
-            _logger.Error($"Couldn't provide default asset for asset of type \"{type.TypeName}\"");
-            return null;
+            return DefaultAsset;
         }
     }
 
@@ -111,68 +75,67 @@ public class GHAssetProvider : IAssetProvider
             return null;
         }
 
-        if (!_assets.ContainsKey(type))
+        if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
         {
-            _assets.Add(type, new());
+            AssetDictionary = new();
+            _assets.Add(type, AssetDictionary);
         }
-        if (_assets[type].ContainsKey(name))
+
+        if (AssetDictionary.ContainsKey(name))
         {
             _logger.Error($"Attempted to add asset which already exists! (Type: \"{type.TypeName}\", Name:\"{name}\")" +
                 $"Unloading old asset and replacing with new one.");
-            try
-            {
-                _assetLoader.Unload(_assets[type][name]);
-            }
-            catch (AssetUnloadException e)
-            {
-                _logger.Error(e.ToString());
-            }
         }
         GHGameAsset GameAsset = new(Asset, type, name);
-        _assets[type][name] = GameAsset;
+        AssetDictionary[name] = GameAsset;
         return GameAsset;
+    }
+
+
+    // Methods.
+    public void SetDefaultAsset(AssetType type, object asset)
+    {
+        _defaultAssets[type] = asset ?? throw new ArgumentNullException(nameof(asset));
+    }
+
+    public void RemoveDefaultAsset(AssetType type)
+    {
+        _defaultAssets.Remove(type);
+    }
+
+    public void ClearDefaultAssets(AssetType type)
+    {
+        _defaultAssets.Clear();
     }
 
 
     // Inherited methods.
     public T? GetAsset<T>(object user, AssetType type, string name) where T : class
     {
-        GHGameAsset? RetreivedGameAsset = TryGetAsset(type, name) ?? CreateAsset(type, name);
-        if (RetreivedGameAsset == null)
+        GHGameAsset? RetrievedGameAsset = TryGetAsset(type, name) ?? CreateAsset(type, name);
+        if (RetrievedGameAsset == null)
         {
             return null;
         }
 
-        T? Asset = RetreivedGameAsset.Asset as T;
-        RetreivedGameAsset.AddUser(user);
+        T? Asset = RetrievedGameAsset.Value as T;
+        RetrievedGameAsset.AddUser(user);
         return Asset;
     }
 
     public void ReleaseAllAssets()
     {
-        foreach (GHGameAsset GameAsset in _assets.Values.SelectMany(assets => assets.Values))
-        {
-            try
-            {
-                _assetLoader.Unload(GameAsset.Asset);
-            }
-            catch (AssetUnloadException e)
-            {
-                _logger.Error(e.ToString());
-            }
-        }
         _assets.Clear();
     }
 
     public void ReleaseAsset(object user, AssetType type, string name)
     {
-        if (!_assets.ContainsKey(type))
+        if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
         {
             return;
         }
 
-        _assets[type].TryGetValue(name, out GHGameAsset? GameAsset);
-        if (GameAsset == null)
+        if (!AssetDictionary.TryGetValue(name, out GHGameAsset? GameAsset))
         {
             return;
         }
@@ -180,8 +143,7 @@ public class GHAssetProvider : IAssetProvider
         GameAsset.RemoveUser(user);
         if (GameAsset.UserCount == 0)
         {
-            _assetLoader.Unload(GameAsset.Asset);
-            _assets[type].Remove(name);
+            AssetDictionary.Remove(name);
         }
     }
 
@@ -189,7 +151,7 @@ public class GHAssetProvider : IAssetProvider
     {
         foreach (GHGameAsset CurrentGameAsset in _assets.Values.SelectMany(assets => assets.Values))
         {
-            if (CurrentGameAsset.Asset == asset)
+            if (CurrentGameAsset.Value == asset)
             {
                 ReleaseAsset(user, CurrentGameAsset.Type, CurrentGameAsset.Name);
                 break;
@@ -213,7 +175,7 @@ public class GHAssetProvider : IAssetProvider
     private class GHGameAsset
     {
         // Fields.
-        internal object Asset { get; }
+        internal object Value { get; }
         internal AssetType Type { get; }
         internal string Name { get; }
         internal int UserCount => _users.Count;
@@ -224,9 +186,9 @@ public class GHAssetProvider : IAssetProvider
 
 
         // Constructors.
-        internal GHGameAsset(object asset, AssetType type, string name)
+        internal GHGameAsset(object value, AssetType type, string name)
         {
-            Asset = asset ?? throw new ArgumentNullException(nameof(asset));
+            Value = value ?? throw new ArgumentNullException(nameof(value));
             Type = type;
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }

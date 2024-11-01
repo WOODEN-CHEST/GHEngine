@@ -28,7 +28,6 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionReader
 
         SetDeconstructor(AssetType.Animation, new JSONAnimationDeconstructor());
         SetDeconstructor(AssetType.Sound, new JSONSoundDeconstructor());
-        SetDeconstructor(AssetType.Song, new JSONSongDeconstructor());
         SetDeconstructor(AssetType.Font, new JSONFontDeconstructor());
         SetDeconstructor(AssetType.Shader, new JSONShaderDeconstructor());
         SetDeconstructor(AssetType.Language, new JSONLanguageDeconstructor());

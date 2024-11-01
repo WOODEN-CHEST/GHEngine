@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Frame.Animation;
 
-public interface IAnimationInstance : ITimeUpdatable, ICloneable
+public interface IAnimationInstance : ITimeUpdatable
 {
     // Fields.
     ISpriteAnimation Source { get; }
@@ -25,4 +25,6 @@ public interface IAnimationInstance : ITimeUpdatable, ICloneable
 
     // Methods.
     public void Reset();
+
+    public IAnimationInstance CreateClone();
 }

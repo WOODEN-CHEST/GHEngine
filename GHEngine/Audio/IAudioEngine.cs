@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using GHEngine.Audio.Source;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,11 +18,12 @@ public interface IAudioEngine : IDisposable, ISampleProvider
     TimeSpan ExecutionTime { get; }
     ISoundInstance[] Sounds { get; }
 
-    //event EventHandler<SampleRequestEventArgs> SampleRequest;
-
-
 
     // Methods.
+    void Start();
+
+    void Stop();
+
     void AddSoundInstance(ISoundInstance sound);
 
     void RemoveSoundInstance(ISoundInstance sound);

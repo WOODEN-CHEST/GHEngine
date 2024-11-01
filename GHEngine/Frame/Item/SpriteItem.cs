@@ -61,7 +61,7 @@ public class SpriteItem : ICloneable, IColorMaskable, IRenderableItem, ITimeUpda
     // Inherited methods.
     public object Clone()
     {
-        return new SpriteItem((IAnimationInstance)Animation.Clone(), Size)
+        return new SpriteItem((IAnimationInstance)Animation.CreateClone(), Size)
         {
             _colorMask = _colorMask,
             IsVisible = IsVisible,

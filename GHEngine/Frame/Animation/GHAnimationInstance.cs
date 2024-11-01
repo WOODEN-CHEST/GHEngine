@@ -77,6 +77,18 @@ public sealed class GHAnimationInstance : IAnimationInstance
         Reset();
     }
 
+    private GHAnimationInstance(GHAnimationInstance animationToClone)
+    {
+        Source = animationToClone.Source;
+        IsLooped = animationToClone.IsLooped;
+        DrawRegion = animationToClone.DrawRegion;
+        FPS = animationToClone.FPS;
+        FrameIndex = animationToClone.FrameIndex;
+        FrameStep = animationToClone.FrameStep;
+        AnimationFinished = animationToClone.AnimationFinished;
+        IsAnimating = animationToClone.IsAnimating;
+    }
+
 
     // Private methods.
     private void UpdateShouldAnimate()
@@ -135,24 +147,15 @@ public sealed class GHAnimationInstance : IAnimationInstance
         }
 
         _secondsSinceFrameSwitch += time.PassedTime.TotalSeconds;
-        if (_secondsSinceFrameSwitch > _secondsPerFrame)
+        while (_secondsSinceFrameSwitch > _secondsPerFrame)
         {
-            _secondsSinceFrameSwitch  = 0d;
+            _secondsSinceFrameSwitch -= _secondsPerFrame;
             IncrementFrame();
         }
     }
 
-    public object Clone()
+    public IAnimationInstance CreateClone()
     {
-        return new GHAnimationInstance(Source)
-        {
-            IsLooped = IsLooped,
-            DrawRegion = DrawRegion,
-            FPS = FPS,
-            FrameIndex = FrameIndex,
-            FrameStep = FrameStep,
-            AnimationFinished = AnimationFinished,
-            IsAnimating = IsAnimating,
-        };
+        return new GHAnimationInstance(this);
     }
 }
