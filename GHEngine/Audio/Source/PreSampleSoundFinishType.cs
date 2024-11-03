@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+namespace GHEngine.Audio.Source;
 
-namespace Tests.Audio;
-
-public enum SoundInstanceState
+public enum PreSampleSoundFinishType
 {
-    Playing,
-    Stopped,
-    Finished
+    None,
+    Finished,
+    Looped
 }

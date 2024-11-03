@@ -10,11 +10,11 @@ namespace GHEngine.Audio;
 public class SoundLoopedArgs : EventArgs
 {
     // Fields.
-    public IPreSampledSound Sound { get; private init; }
+    public IPreSampledSoundInstance Sound { get; private init; }
 
 
     // Constructors.
-    public SoundLoopedArgs(IPreSampledSound sound)
+    public SoundLoopedArgs(IPreSampledSoundInstance sound)
     {
         Sound = sound ?? throw new ArgumentNullException(nameof(sound));
     }

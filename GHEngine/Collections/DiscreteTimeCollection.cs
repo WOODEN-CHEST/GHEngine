@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Collections;
 
-public class DiscreteTimeList<T> : IEnumerable<T>
+public class DiscreteTimeCollection<T> : IEnumerable<T>
 {
     // Fields.
     public int Count => _current.Count;
@@ -20,12 +20,12 @@ public class DiscreteTimeList<T> : IEnumerable<T>
 
 
     // Constructors.
-    public DiscreteTimeList()
+    public DiscreteTimeCollection()
     {
         _current = new();
     }
 
-    public DiscreteTimeList(IEnumerable<T> startingList)
+    public DiscreteTimeCollection(IEnumerable<T> startingList)
     {
         _current = new(startingList);
     }
@@ -46,10 +46,7 @@ public class DiscreteTimeList<T> : IEnumerable<T>
 
     public void ApplyAddedItems()
     {
-        foreach (var Item in _toAdd)
-        {
-            _current.Add(Item);
-        }
+        _current.AddRange(_toAdd);
         _toAdd.Clear();
     }
 
@@ -72,10 +69,7 @@ public class DiscreteTimeList<T> : IEnumerable<T>
     // Inherited methods.
     public IEnumerator<T> GetEnumerator()
     {
-        foreach (var Item in _current)
-        {
-            yield return Item;
-        }
+        return _current.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()

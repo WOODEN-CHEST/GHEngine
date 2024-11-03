@@ -14,7 +14,7 @@ public class GHAssetProvider : IAssetProvider
 {
     // Private fields.
     private readonly IAssetLoader _assetLoader;
-    private readonly ILogger _logger;
+    private readonly ILogger? _logger;
 
     private readonly IAssetDefinitionCollection _definitions;
     private readonly Dictionary<AssetType, object> _defaultAssets = new();
@@ -25,11 +25,11 @@ public class GHAssetProvider : IAssetProvider
     // Constructors.
     public GHAssetProvider(IAssetLoader loader,
         IAssetDefinitionCollection definitions,
-        ILogger logger)
+        ILogger? logger)
     {
         _assetLoader = loader ?? throw new ArgumentNullException(nameof(loader));
         _definitions = definitions ?? throw new ArgumentNullException(nameof(_definitions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger;
     }
 
 
@@ -52,7 +52,7 @@ public class GHAssetProvider : IAssetProvider
 
         if (Definition == null)
         {
-            _logger.Warning($"Attempted to load undefined asset \"{name}\" of type \"{type}\"");
+            _logger?.Warning($"Attempted to load undefined asset \"{name}\" of type \"{type}\"");
             return DefaultAsset;
         }
 
@@ -62,7 +62,7 @@ public class GHAssetProvider : IAssetProvider
         }
         catch (AssetLoadException e)
         {
-            _logger.Warning(e.ToString());
+            _logger?.Warning(e.ToString());
             return DefaultAsset;
         }
     }
@@ -83,7 +83,7 @@ public class GHAssetProvider : IAssetProvider
 
         if (AssetDictionary.ContainsKey(name))
         {
-            _logger.Error($"Attempted to add asset which already exists! (Type: \"{type.TypeName}\", Name:\"{name}\")" +
+            _logger?.Error($"Attempted to add asset which already exists! (Type: \"{type.TypeName}\", Name:\"{name}\")" +
                 $"Unloading old asset and replacing with new one.");
         }
         GHGameAsset GameAsset = new(Asset, type, name);

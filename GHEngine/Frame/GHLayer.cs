@@ -1,4 +1,5 @@
-﻿using GHEngine.Frame.Item;
+﻿using GHEngine.Collections;
+using GHEngine.Frame.Item;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -7,10 +8,14 @@ namespace GHEngine.Frame;
 
 public class GHLayer : ILayer
 {
+    // Static fields/
+    public const float DEFAULT_Z_INDEX = 0f;
+
+
     // Fields.
     public string Name { get; private init; }
-    public bool IsVisible { get; set; }
-    public SpriteEffect? Shader { get; set; }
+    public bool IsVisible { get; set; } = true;
+    public SpriteEffect? Shader { get; set; } = null;
 
     public float Brightness
     {
@@ -49,7 +54,7 @@ public class GHLayer : ILayer
     // Inherited  methods.
     public void AddItem(IRenderableItem item)
     {
-        AddItem(item, ILayer.DEFAULT_Z_INDEX);
+        AddItem(item, DEFAULT_Z_INDEX);
     }
 
     public void AddItem(IRenderableItem item, float zIndex)

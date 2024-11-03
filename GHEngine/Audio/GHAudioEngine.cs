@@ -10,77 +10,34 @@ namespace GHEngine.Audio;
 
 public class GHAudioEngine : IAudioEngine
 {
+    // Static fields.
+    public const float MIN_VOLUME = 0f;
+    public const float MAX_VOLUME = 10_000f;
+    public const float DEFAULT_VOLUME = 1f;
+
+
     // Fields.
     public WaveFormat WaveFormat { get; private init; }
     public int AudioLatency { get; private init; }
     public int MaxSounds
     {
-        get
-        {
-            lock (this)
-            {
-                return _maxSounds;
-            }
-        }
+        get => _maxSounds;
         set
         {
-            lock (this)
-            {
-                _maxSounds = Math.Max(0, value);
-            }
+            _maxSounds = Math.Max(0, value);
         }
     }
 
-    public ISoundInstance[] Sounds
-    {
-        get
-        {
-            lock (this)
-            {
-                return _sounds.ToArray();
-            }
-        }
-    }
+    public ISoundInstance[] Sounds => _sounds.ToArray();
 
     public float Volume
     {
-        get
-        {
-            lock (this)
-            {
-                return _volume;
-            }
-        }
-        set
-        {
-            lock (this)
-            {
-                _volume = Math.Clamp(value, 0f, 1f);
-            }
-        }
+        get => _volume;
+        set => _volume = float.IsNaN(value) ? DEFAULT_VOLUME : Math.Clamp(value, MIN_VOLUME, MAX_VOLUME);
     }
 
-    public int SoundCount
-    {
-        get
-        {
-            lock (this)
-            {
-                return _sounds.Count;
-            }
-        }
-    }
-
-    public TimeSpan ExecutionTime
-    {
-        get 
-        {
-            lock (this)
-            {
-                return _executionTime;
-            }
-        }
-    }
+    public int SoundCount => _sounds.Count;
+    public TimeSpan ExecutionTime => _executionTime;
 
     public int SamplesPerSecond => WaveFormat.SampleRate * WaveFormat.Channels;
 
@@ -90,7 +47,8 @@ public class GHAudioEngine : IAudioEngine
 
     private float _volume = 1f;
     private int _maxSounds = 128;
-    private readonly DiscreteTimeList<ISoundInstance> _sounds = new();
+    private readonly DiscreteTimeCollection<Action> _scheduledActions = new();
+    private readonly DiscreteTimeCollection<ISoundInstance> _sounds = new();
     private float[] _soundBuffer;
 
     private TimeSpan _executionTime;
@@ -148,62 +106,76 @@ public class GHAudioEngine : IAudioEngine
         }
     }
 
+    private void ClampBufferValues(float[] buffer, int offset, int count)
+    {
+        for (int i = offset; i < count + offset; i++)
+        {
+            buffer[i] = Math.Clamp(buffer[i], -1f, 1f);
+        }
+    }
+
+    private void OnSoundFinishEvent(SoundFinishedArgs args)
+    {
+        _sounds.Remove(args.Instance);
+    }
+
+    private void ExecuteScheduledActions()
+    {
+        foreach (Action ScheduledAction in _scheduledActions)
+        {
+            ScheduledAction.Invoke();
+        }
+        _scheduledActions.Clear();
+    }
 
     // Inherited methods.
     public void AddSoundInstance(ISoundInstance sound)
     {
         lock (_sounds)
         {
-            _sounds.Add(sound);
+            if (_sounds.Count < _maxSounds)
+            {
+                _sounds.Add(sound);
+            }
         }
     }
 
     public void RemoveSoundInstance(ISoundInstance sound)
     {
-        lock (_sounds)
-        {
-            _sounds.Remove(sound);
-        }
+        _sounds.Remove(sound);
     }
 
     public void ClearSounds()
     {
-        lock (_sounds)
-        {
-            _sounds.Clear();
-        }
+         _sounds.Clear();
     }
 
     public void Dispose()
     {
-        lock (this)
-        {
-            _outputDevice?.Dispose();
-        }
+        _outputDevice?.Dispose();
     }
 
     public int Read(float[] buffer, int offset, int count)
     {
         try
         {
-
-            EnsureBuffer(count);
-
-            float TargetVolume = Volume;
-            lock (_sounds)
-            {
-                _sounds.ApplyChanges(); 
-            }
-
             _executionMeasurer.Reset();
             _executionMeasurer.Start();
-            ReadSounds(TargetVolume, buffer, offset, count);
-            _executionMeasurer.Stop();
+
+            EnsureBuffer(count);
+            _sounds.ApplyChanges();
 
             lock (this)
             {
-                _executionTime = _executionMeasurer.Elapsed;
+                _scheduledActions.ApplyChanges();
             }
+
+            ExecuteScheduledActions();
+            ReadSounds(_volume, buffer, offset, count);
+            ClampBufferValues(buffer, offset, count);
+
+            _executionMeasurer.Stop();
+            _executionTime = _executionMeasurer.Elapsed;
             return count;
         }
         catch (Exception e)
@@ -222,5 +194,22 @@ public class GHAudioEngine : IAudioEngine
     public void Stop()
     {
         _outputDevice.Stop();
+    }
+
+    public void ScheduleAction(params Action[] actions)
+    {
+        ArgumentNullException.ThrowIfNull(actions, nameof(actions));
+        if (actions.Length == 0)
+        {
+            return;
+        }
+
+        lock (this)
+        {
+            foreach (Action ScheduledAction in actions)
+            {
+                _scheduledActions.Add(ScheduledAction);
+            }
+        }
     }
 }

@@ -29,4 +29,6 @@ public interface IAudioEngine : IDisposable, ISampleProvider
     void RemoveSoundInstance(ISoundInstance sound);
 
     void ClearSounds();
+
+    void ScheduleAction(params Action[] action);
 }

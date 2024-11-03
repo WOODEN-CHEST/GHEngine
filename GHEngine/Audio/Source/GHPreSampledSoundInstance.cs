@@ -14,89 +14,24 @@ public class GHPreSampledSoundInstance : IPreSampledSoundInstance
     // Inherited methods.
     public IPreSampledSoundSampler Sampler
     {
-        get
-        {
-            lock (this)
-            {
-                return _sampler;
-            }
-        }
-        set
-        {
-            lock (this)
-            {
-                _sampler = value ?? throw new ArgumentNullException(nameof(value));
-            }
-        }
+        get => _sampler;
+        set => _sampler = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    public bool IsLooped
-    {
-        get
-        {
-            lock (this)
-            {
-                return _isLooped;
-            }
-        }
-        set
-        {
-            lock (this)
-            {
-                _isLooped = value;
-            }
-        }
-    }
+    public bool IsLooped { get; set; }
 
-    public SoundInstanceState State
-    {
-        get
-        {
-            lock (this)
-            {
-                return _state;
-            }
-        }
-        set
-        {
-            lock (this)
-            {
-                _state = value;
-            }
-        }
-    }
-    
-    public ISoundModifier[] Modifiers
-    {
-        get
-        {
-            lock (this)
-            {
-                return _modifiers.ToArray();
-            }
-        }
-    }
+    public SoundInstanceState State { get; set; } = SoundInstanceState.Playing;
+
+    public ISoundModifier[] Modifiers => _modifiers.ToArray();
 
     public int ModifierCount => _modifiers.Count;
 
     public IPreSampledSound Sound { get; private init; }
+
     public TimeSpan Position
     {
-        get
-        {
-            lock (this)
-            {
-                return TimeSpan.FromSeconds(_sampleIndex / Sound.Format.SampleRate / Sound.Format.Channels);
-            }
-        }
-        set
-        {
-            double NewIndex = value.TotalSeconds * Sound.Format.SampleRate;
-            lock (this)
-            {
-                _sampleIndex = NewIndex;
-            }
-        }
+        get => TimeSpan.FromSeconds(_sampleIndex / Sound.Format.SampleRate / Sound.Format.Channels);
+        set => _sampleIndex = value.TotalSeconds * Sound.Format.SampleRate;
     }
 
     public event EventHandler<SoundLoopedArgs>? SoundLooped;
@@ -106,9 +41,7 @@ public class GHPreSampledSoundInstance : IPreSampledSoundInstance
     // Private fields.
     private readonly List<ISoundModifier> _modifiers = new();
 
-    private bool _isLooped = false;
     private double _sampleIndex = 0d;
-    private SoundInstanceState _state = SoundInstanceState.Playing;
     private IPreSampledSoundSampler _sampler = new GHPreSampledSoundSampler();
 
 
@@ -118,6 +51,36 @@ public class GHPreSampledSoundInstance : IPreSampledSoundInstance
         Sound = sound ?? throw new ArgumentNullException(nameof(sound));
     }
 
+
+
+    // Private methods.
+    private bool ApplyModifiers(float[] buffer, int sampleCount, WaveFormat format)
+    {
+        bool AreMoreSamplesAvailable = false;
+        foreach (ISoundModifier Modifier in _modifiers)
+        {
+            AreMoreSamplesAvailable |= Modifier.Modify(buffer, sampleCount, format);
+        }
+        return AreMoreSamplesAvailable;
+    }
+
+    private void SampleSound(float[] buffer, int sampleCount, WaveFormat format)
+    {
+        PreSampledSoundResult Result = _sampler.Sample(buffer, _sampleIndex, sampleCount, IsLooped, Sound, format);
+        _sampleIndex = Result.NewIndex;
+
+        bool AreMoreSamplesAvailable = ApplyModifiers(buffer, sampleCount, format);
+
+        if (Result.FinishType == PreSampleSoundFinishType.Looped)
+        {
+            SoundLooped?.Invoke(this, new(this));
+        }
+        else if (!AreMoreSamplesAvailable && (Result.FinishType == PreSampleSoundFinishType.Finished))
+        {
+            SoundFinished?.Invoke(this, new(this));
+            State = SoundInstanceState.Finished;
+        }
+    }
 
 
     // Inherited methods.
@@ -143,26 +106,13 @@ public class GHPreSampledSoundInstance : IPreSampledSoundInstance
 
     public void GetSamples(float[] buffer, int sampleCount, WaveFormat format)
     {
-        double SampleIndexNow;
-        bool IsLoopedNow;
-        ISoundModifier[] ActiveModifiers;
-        lock (this)
+        if (State == SoundInstanceState.Playing)
         {
-            SampleIndexNow = _sampleIndex;
-            IsLoopedNow = _isLooped;
-            ActiveModifiers = _modifiers.Count == 0 ? Array.Empty<ISoundModifier>() : _modifiers.ToArray();
-        }
-
-        double NewIndex = _sampler.Sample(buffer, SampleIndexNow, sampleCount, _isLooped, Sound, format);
-
-        lock (this)
+            SampleSound(buffer, sampleCount, format);
+        } 
+        else
         {
-            _sampleIndex = NewIndex;
-        }
-
-        foreach (ISoundModifier Modifier in _modifiers)
-        {
-            Modifier.Modify(buffer, sampleCount, format);
+            Array.Fill(buffer, 0f, 0, sampleCount);
         }
     }
 }

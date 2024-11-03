@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Screen;
 
-public interface IDisplay
+public interface IDisplay : IDisposable
 {
     // Static fields.
     public const float ASPECT_RATIO_SQUARE = 1f; 
@@ -17,7 +17,6 @@ public interface IDisplay
 
 
     // Fields.
-    float TargetAspectRatio { get; set; }
     IntVector WindowedSize { get; set; }
     IntVector FullScreenSize { get; set; }
     IntVector CurrentWindowSize { get; set; }
@@ -29,11 +28,5 @@ public interface IDisplay
 
 
     // Methods.
-    Vector2 ToNormalizedPosition(Vector2 windowPosition);
-
-    Vector2 ToWindowPosition(Vector2 normalizedPosition);
-
-    Vector2 ToNormalizedSize(Vector2 windowSize);
-
-    Vector2 ToWindowSize(Vector2 normalizedSize);
+    void Initialize();
 }

@@ -7,14 +7,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace GHEngine.Frame.Item;
 
-public class SpriteItem : ICloneable, IColorMaskable, IRenderableItem, ITimeUpdatable, IShadered
+public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShadered
 {
     // Fields.
-    public Vector2 Position { get; set; }
-    public Vector2 Size { get; set; }
-    public float Rotation { get; set; }
-    Vector2 Origin { get; set; }
-    public SpriteEffects Effects { get; set; }
+    public Vector2 Position { get; set; } = Vector2.Zero;
+    public Vector2 Size { get; set; } = Vector2.One;
+    public float Rotation { get; set; } = 0f;
+    Vector2 Origin { get; set; } = Vector2.Zero;
+    public SpriteEffects Effects { get; set; } = SpriteEffects.None;
 
     public IAnimationInstance Animation
     {
@@ -45,30 +45,39 @@ public class SpriteItem : ICloneable, IColorMaskable, IRenderableItem, ITimeUpda
 
 
     // Private fields.
-    private GenericColorMask _colorMask;
+    private GenericColorMask _colorMask = new();
     private IAnimationInstance _animation;
 
 
     // Constuctors.
-    public SpriteItem(IAnimationInstance instance, Vector2 size)
+    public SpriteItem(IAnimationInstance instance)
     {
         Animation = instance;
-        Size = size;
+    }
+
+    public SpriteItem(SpriteItem itemToClone)
+    {
+        Animation = itemToClone.Animation.CreateClone();
+        Position = itemToClone.Position;
+        _colorMask = itemToClone._colorMask;
+        Origin = itemToClone.Origin;
+        Size = itemToClone.Size;
+        Rotation = itemToClone.Rotation;
+        Effects = itemToClone.Effects;
+        Shader = itemToClone.Shader;
+        IsVisible = itemToClone.IsVisible;
+    }
+
+
+    // Methods.
+    public SpriteItem CreateClone()
+    {
+        return new(this);
     }
 
 
 
     // Inherited methods.
-    public object Clone()
-    {
-        return new SpriteItem((IAnimationInstance)Animation.CreateClone(), Size)
-        {
-            _colorMask = _colorMask,
-            IsVisible = IsVisible,
-            Position = Position,
-        };
-    }
-
     public void Render(IRenderer renderer, IProgramTime time)
     {
         renderer.DrawSprite(_animation.CurrentFrame, Position, _animation.DrawRegion, _colorMask.CombinedMask,

@@ -45,13 +45,24 @@ public class GHUserInput : IUserInput
     {
         set => Mouse.SetCursor(value);
     }
-    public IntVector InputAreaSizePixels { get; set; }
+
+    public Vector2 InputAreaSizePixels
+    {
+        get => _inputAreaSizePixels;
+        set
+        {
+            _inputAreaSizePixels = value;
+
+        }
+    }
 
     public event EventHandler<TextInputEventArgs>? TextInput;
     public event EventHandler<FileDropEventArgs>? FileDrop;
 
 
     // Private fields.
+    private Vector2 _inputAreaSizePixels;
+
     public readonly DeltaValue<KeyboardState> _keyboardState = new();
     public readonly DeltaValue<int> _keysDownCount = new();
     public readonly DeltaValue<MouseState> _mouseState = new();
@@ -61,15 +72,13 @@ public class GHUserInput : IUserInput
 
     private readonly GameWindow _window;
     private readonly Game _game;
-    private readonly IDisplay _display;
 
 
     // Constructors.
-    public GHUserInput(GameWindow window, Game game, IDisplay display)
+    public GHUserInput(GameWindow window, Game game)
     {
         _window = window ?? throw new ArgumentNullException(nameof(window));
         _game = game ?? throw new ArgumentNullException(nameof(game));
-        _display = display ?? throw new ArgumentNullException(nameof(display));
         _window.TextInput += OnTextInputEvent;
         _window.FileDrop += OnFileDropEvent;
     }
@@ -98,7 +107,8 @@ public class GHUserInput : IUserInput
     {
         _mouseState.SetValue(Mouse.GetState());
         _actualMousePosition.SetValue(_mouseState.Current.Position.ToVector2());
-        _virtualMousePosition.SetValue(_display.ToNormalizedPosition(_actualMousePosition.Current));
+        _virtualMousePosition.SetValue(_mouseState.Current.Position.ToVector2()
+            / new Vector2(_window.ClientBounds.Width, _window.ClientBounds.Height));
 
         int MouseButtonsPressed = 0;
         if (_mouseState.Current.LeftButton == ButtonState.Pressed) MouseButtonsPressed++;

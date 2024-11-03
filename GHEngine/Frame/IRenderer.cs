@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GHEngine.Font;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace GHEngine.Frame;
@@ -15,7 +16,7 @@ public interface IRenderer : IDisposable
         SpriteEffects effects,
         SpriteEffect? shader);
 
-    public void DrawString(SpriteFont font,
+    public void DrawString(GHFont font,
         string text,
         Vector2 position,
         Color mask,
@@ -36,5 +37,10 @@ public interface IRenderer : IDisposable
         float rotation,
         float width,
         float length,
+        SpriteEffect? shader);
+
+    public void DrawRectangle(Color color,
+        Vector2 startingPoint,
+        Vector2 EndPoint,
         SpriteEffect? shader);
 }

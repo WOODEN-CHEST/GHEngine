@@ -14,12 +14,9 @@ public interface IPreSampledSoundSampler
     double SampleSpeed { get; set; }
     float Volume { get; set; }
 
-    public event EventHandler<SoundLoopedArgs>? SoundLooped;
-    public event EventHandler<SoundFinishedArgs>? SoundFinished;
-
 
     // Methods.
-    double Sample(float[] buffer,
+    PreSampledSoundResult Sample(float[] buffer,
         double soundOffset,
         int count, 
         bool isLooped, 

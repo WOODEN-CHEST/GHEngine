@@ -10,7 +10,11 @@ namespace GHEngine.Assets.Loader;
 
 public class LanguageLoader : GHStreamAssetLoader
 {
-    // Constructors,
+    // Static fields.
+    public const string FILE_EXTENSION = ".json";
+
+
+    // Constructors.
     public LanguageLoader(IAssetStreamOpener streamOpener) : base(streamOpener) { }
 
 
@@ -22,10 +26,14 @@ public class LanguageLoader : GHStreamAssetLoader
             throw new AssetLoadException("Asset definition is not a font definition.");
         }
 
-        ILanguage Language = new GHLanguage(LanguageDefinition.LanguageNameLocal, LanguageDefinition.LanguageNameEnglish);
-        AssetPath FullPath = new AssetPath( Path.Combine(LanguageDefinition.Type.RootPathName,
-            LanguageDefinition.TargetPath.Path), LanguageDefinition.TargetPath.Type);
+        string ModifiedPath = Path.Combine(LanguageDefinition.Type.RootPathName, LanguageDefinition.TargetPath.Path);
+        if (LanguageDefinition.TargetPath.Type == AssetPathType.FileSystem)
+        {
+            ModifiedPath = Path.ChangeExtension(ModifiedPath, FILE_EXTENSION);
+        }
+        AssetPath FullPath = new AssetPath(ModifiedPath, LanguageDefinition.TargetPath.Type);
 
+        ILanguage Language = new GHLanguage(LanguageDefinition.LanguageNameLocal, LanguageDefinition.LanguageNameEnglish);
         new JSONLanguageReader().Read(Language, StreamOpener.GetStream(FullPath));
         return Language;
     }

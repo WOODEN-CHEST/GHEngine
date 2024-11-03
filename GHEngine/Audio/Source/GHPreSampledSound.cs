@@ -22,6 +22,7 @@ public class GHPreSampledSound : IPreSampledSound
     {
         Format = format ?? throw new ArgumentNullException(nameof(format));
         Samples = samples ?? throw new ArgumentNullException(nameof(samples));
+        Duration = TimeSpan.FromSeconds((double)samples.Length / format.Channels / format.SampleRate);
 
         if (samples.Length % Format.Channels != 0)
         {
@@ -31,7 +32,7 @@ public class GHPreSampledSound : IPreSampledSound
     }
 
 
-    // Inehrited methods.
+    // Inherited methods.
     public ISoundInstance CreateInstance()
     {
         return new GHPreSampledSoundInstance(this);

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine.Frame;
+namespace GHEngine.Collections;
 
 public class ZIndexedCollection<T> : IEnumerable<T>
 {

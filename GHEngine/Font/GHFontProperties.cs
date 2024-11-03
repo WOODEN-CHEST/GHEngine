@@ -4,12 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+namespace GHEngine.Font;
 
-namespace Tests.Audio;
-
-public enum SoundInstanceState
-{
-    Playing,
-    Stopped,
-    Finished
-}
+public record struct GHFontProperties(float Size, bool IsBold, bool IsItalic) { }

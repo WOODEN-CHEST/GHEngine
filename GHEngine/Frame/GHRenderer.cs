@@ -1,4 +1,5 @@
-﻿using GHEngine.Frame.Item;
+﻿using GHEngine.Font;
+using GHEngine.Frame.Item;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -7,10 +8,10 @@ using Microsoft.Xna.Framework.Graphics;
 namespace GHEngine.Frame;
 
 
-public class GHRenderer : IRenderer
+public class GHRenderer : IFrameRenderer
 {
     // Private static fields.
-    private const float LAYER_DEPTH = 0f;
+    private const float LAYER_DEPTH = 0.5f;
     private const float ONE_LINE_UNIT = 0.05f;
 
 
@@ -22,8 +23,8 @@ public class GHRenderer : IRenderer
     private SpriteEffect? _currentShader = null;
     private readonly Texture2D _lineTexture;
 
-    private RenderTarget2D _frameRenderTarget = null!;
-    private RenderTarget2D _layerRenderTarget = null!;
+    private RenderTarget2D? _frameRenderTarget = null;
+    private RenderTarget2D? _layerRenderTarget = null;
 
 
     // Constructors.
@@ -36,41 +37,18 @@ public class GHRenderer : IRenderer
         _lineTexture.SetData(new Color[] { Color.White });
 
         _display = display ?? throw new ArgumentNullException(nameof(display));
-        _display.ScreenSizeChange += OnDisplayChangeEvent;
-
-        CreateRenderTargets();
-    }
-
-
-    // Methods.
-    public void RenderFrame(IGameFrame frameToDraw, IProgramTime time)
-    {
-        foreach (ILayer Layer in frameToDraw.Layers)
-        {
-            if ((Layer.DrawableItemCount == 0) || !Layer.IsVisible)
-            {
-                continue;
-            }
-            
-            _graphicsDevice.SetRenderTarget(_layerRenderTarget);
-            BeginSpriteBatch(null);
-            Layer.Render(this, time);
-            _spriteBatch.End();
-
-            RenderColorMaskableOntoTarget(Layer, Layer.Shader, _layerRenderTarget, _frameRenderTarget);
-        }
-
-        RenderColorMaskableOntoTarget(frameToDraw, frameToDraw.Shader, _frameRenderTarget, null);
     }
 
 
     // Private methods.
     private void RenderColorMaskableOntoTarget(IColorMaskable maskable, SpriteEffect? effect, Texture2D source, RenderTarget2D? target)
     {
-        GenericColorMask ItemMask = new();
-        ItemMask.Mask = maskable.Mask;
-        ItemMask.Brightness = maskable.Brightness;
-        ItemMask.Opacity = maskable.Opacity;
+        GenericColorMask ItemMask = new()
+        {
+            Mask = maskable.Mask,
+            Brightness = maskable.Brightness,
+            Opacity = maskable.Opacity
+        };
 
         _graphicsDevice.SetRenderTarget(target);
         BeginSpriteBatch(effect);
@@ -90,16 +68,16 @@ public class GHRenderer : IRenderer
         _layerRenderTarget?.Dispose();
 
         _frameRenderTarget = new RenderTarget2D(_graphicsDevice, _display.CurrentWindowSize.X, _display.CurrentWindowSize.Y,
-            false, SurfaceFormat.ColorSRgb, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
+            false, SurfaceFormat.Color, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
         _layerRenderTarget = new RenderTarget2D(_graphicsDevice, _display.CurrentWindowSize.X, _display.CurrentWindowSize.Y,
-            false, SurfaceFormat.ColorSRgb, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
+            false, SurfaceFormat.Color, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
     }
 
     private void BeginSpriteBatch(SpriteEffect? shader)
     {
         _currentShader = shader;
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, SamplerState.LinearClamp, DepthStencilState.Default,
-            RasterizerState.CullClockwise, shader, null);
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, SamplerState.LinearClamp, DepthStencilState.None,
+            RasterizerState.CullCounterClockwise, shader, null);
     }
 
     private void EnsureShaderForDrawCall(SpriteEffect? shader)
@@ -107,7 +85,31 @@ public class GHRenderer : IRenderer
         if (_currentShader != shader)
         {
             _spriteBatch.End();
+            _currentShader = shader;
             BeginSpriteBatch(_currentShader);
+        }
+    }
+
+    private Vector2 ToVirtualPosition(Vector2 position)
+    {
+        return position / (Vector2)_display.CurrentWindowSize;
+    }
+
+    private Vector2 ToWindowPosition(Vector2 position)
+    {
+        return position * (Vector2)_display.CurrentWindowSize;
+    }
+
+    private Vector2 ToWindowScale(Vector2 textureSize, Vector2 scale)
+    {
+        IntVector CurrentWindowSize = _display.CurrentWindowSize;
+        if (CurrentWindowSize.X > CurrentWindowSize.Y)
+        {
+            return new Vector2(CurrentWindowSize.Y) / textureSize * scale;
+        }
+        else
+        {
+            return new Vector2(CurrentWindowSize.X) / textureSize * scale;
         }
     }
 
@@ -124,25 +126,15 @@ public class GHRenderer : IRenderer
         SpriteEffect? shader)
     {
         EnsureShaderForDrawCall(shader);
-        _spriteBatch.Draw(texture, _display.ToWindowPosition(position), sourceArea, mask, rotation,
+        _spriteBatch.Draw(texture,
+            ToWindowPosition(position),
+            sourceArea, 
+            mask, 
+            rotation,
             origin * new Vector2(texture.Width, texture.Height),
-            _display.ToWindowSize(size) / new Vector2(texture.Width, texture.Height), effects, LAYER_DEPTH);
-    }
-
-    public void DrawString(SpriteFont font, 
-        string text, 
-        Vector2 position,
-        Color mask, 
-        float rotation, 
-        Vector2 origin,
-        Vector2 size,
-        SpriteEffects effects,
-        SpriteEffect? shader)
-    {
-        EnsureShaderForDrawCall(shader);
-        Vector2 TextSize = font.MeasureString(text);
-        _spriteBatch.DrawString(font, text, _display.ToWindowPosition(position), mask, rotation,
-            origin * TextSize, _display.ToWindowSize(size) / TextSize, effects, LAYER_DEPTH);
+            ToWindowScale(new(texture.Width, texture.Height), size), 
+            effects, 
+            LAYER_DEPTH);
     }
 
     public void DrawLine(Color color, Vector2 startPoint, Vector2 endPoint, float width, SpriteEffect? shader)
@@ -153,18 +145,64 @@ public class GHRenderer : IRenderer
 
     public void DrawLine(Color color, Vector2 startPoint, float rotation, float width, float length, SpriteEffect? shader)
     {
-        EnsureShaderForDrawCall(shader);
-        _spriteBatch.Draw(_lineTexture, _display.ToWindowPosition(startPoint), null, color, rotation,
-            new Vector2(0.5f, 0f), _display.ToWindowSize(new Vector2(ONE_LINE_UNIT * width, ONE_LINE_UNIT * length)),
-            SpriteEffects.None, LAYER_DEPTH);
+        throw new NotImplementedException();
+        //EnsureShaderForDrawCall(shader);
+        //_spriteBatch.Draw(_lineTexture, _display.ToWindowPosition(startPoint), null, color, rotation,
+        //    new Vector2(0.5f, 0f), _display.ToWindowSize(new Vector2(ONE_LINE_UNIT * width, ONE_LINE_UNIT * length)),
+        //    SpriteEffects.None, LAYER_DEPTH);
     }
 
     public void Dispose()
     {
         _display.ScreenSizeChange -= OnDisplayChangeEvent;
-        _layerRenderTarget.Dispose();
-        _frameRenderTarget.Dispose();
+        _layerRenderTarget?.Dispose();
+        _frameRenderTarget?.Dispose();
         _lineTexture.Dispose();
         _spriteBatch.Dispose();
+        _display.ScreenSizeChange -= OnDisplayChangeEvent;
+    }
+
+    public void DrawString(GHFont font, 
+        string text, Vector2 position,
+        Color mask,
+        float rotation,
+        Vector2 origin,
+        Vector2 size, 
+        SpriteEffects effects, 
+        SpriteEffect? shader)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void DrawRectangle(Color color, Vector2 startingPoint, Vector2 EndPoint, SpriteEffect? shader)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void RenderFrame(IGameFrame frameToDraw, IProgramTime time)
+    {
+        foreach (ILayer Layer in frameToDraw.Layers)
+        {
+            if ((Layer.DrawableItemCount == 0) || !Layer.IsVisible)
+            {
+                continue;
+            }
+
+            _graphicsDevice.SetRenderTarget(_layerRenderTarget);
+            _graphicsDevice.Clear(Color.Transparent);
+            BeginSpriteBatch(null);
+            Layer.Render(this, time);
+            _spriteBatch.End();
+
+            RenderColorMaskableOntoTarget(Layer, Layer.Shader, _layerRenderTarget!, _frameRenderTarget);
+        }
+
+        RenderColorMaskableOntoTarget(frameToDraw, frameToDraw.Shader, _frameRenderTarget!, null);
+    }
+
+    public void Initialize()
+    {
+        _display.ScreenSizeChange += OnDisplayChangeEvent;
+        CreateRenderTargets();
     }
 }

@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+namespace GHEngine.Audio.Modifier;
 
-namespace Tests.Audio;
-
-public enum SoundInstanceState
+public enum BiQuadPassType
 {
-    Playing,
-    Stopped,
-    Finished
+    Low,
+    High
 }

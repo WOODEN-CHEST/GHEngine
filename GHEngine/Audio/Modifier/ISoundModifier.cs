@@ -10,5 +10,5 @@ namespace GHEngine.Audio.Modifier;
 public interface ISoundModifier
 {
     // Methods.
-    void Modify(float[] buffer, int count, WaveFormat targetFormat);
+    bool Modify(float[] buffer, int count, WaveFormat targetFormat);
 }

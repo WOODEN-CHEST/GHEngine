@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine;
 
-internal class GenericProgramTime : IProgramTime
+public class GenericProgramTime : IModifiableProgramTime
 {
     public TimeSpan PassedTime { get; set; }
 

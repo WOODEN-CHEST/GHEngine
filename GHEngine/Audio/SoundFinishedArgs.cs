@@ -10,12 +10,12 @@ namespace GHEngine.Audio;
 public class SoundFinishedArgs : EventArgs
 {
     // Fields.
-    public ISound Sound { get; private init; }
+    public ISoundInstance Instance { get; private init; }
 
 
     // Constructors.
-    public SoundFinishedArgs(ISound sound)
+    public SoundFinishedArgs(ISoundInstance sound)
     {
-        Sound = sound ?? throw new ArgumentNullException(nameof(sound));
+        Instance = sound ?? throw new ArgumentNullException(nameof(sound));
     }
 }

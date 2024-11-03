@@ -64,4 +64,17 @@ public class GHAssetStreamOpener : IAssetStreamOpener
         ArgumentNullException.ThrowIfNull(path, nameof(stream));
         _memoryAssetStreams[path] = stream;
     }
+
+    public bool DoesFileExist(string path)
+    {
+        string FullPath = Path.Combine(_pathRoot, path);
+        try
+        {
+            return File.Exists(FullPath);
+        }
+        catch (IOException e)
+        {
+            throw new AssetLoadException("Exception while checking if path exists.", e);
+        }
+    }
 }

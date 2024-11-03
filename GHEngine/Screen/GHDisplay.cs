@@ -10,8 +10,6 @@ public class GHDisplay : IDisplay
 
 
     // Fields.
-    public float TargetAspectRatio { get; set; }
-
     public IntVector WindowedSize
     {
         get => _windowedSize;
@@ -61,7 +59,7 @@ public class GHDisplay : IDisplay
 
     public IntVector CurrentWindowSize
     {
-        get => new IntVector(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+        get => new IntVector(_window.ClientBounds.Width, _window.ClientBounds.Height);
         set
         {
             IntVector NewSize = ClampSize(value);
@@ -90,20 +88,17 @@ public class GHDisplay : IDisplay
     private readonly GraphicsDeviceManager _graphics;
     private GameWindow _window;
 
-    private Vector2 _virtualSize;
-    private Vector2 _padding;
+
 
 
     // Constructors.
-    internal GHDisplay(GraphicsDeviceManager manager, GameWindow window)
+    public GHDisplay(GraphicsDeviceManager manager, GameWindow window)
     {
         _graphics = manager ?? throw new ArgumentNullException(nameof(manager));
         _window = window ?? throw new ArgumentNullException(nameof(window));
-        window.ClientSizeChanged += OnWindowSizeChangeEvent;
 
         WindowedSize = new IntVector(ScreenSize.X / 2, ScreenSize.Y / 2);
         IsFullScreen = false;
-        UpdateVirtualProperties();
     }
 
 
@@ -118,23 +113,8 @@ public class GHDisplay : IDisplay
         {
             FullScreenSize = CurrentWindowSize;
         }
-        UpdateVirtualProperties();
 
         ScreenSizeChange?.Invoke(this, new ScreenSizeChangeEventArgs(CurrentWindowSize));
-    }
-
-    private void UpdateVirtualProperties()
-    {
-        float WindowAspectRatio = (float)CurrentWindowSize.X / (float)CurrentWindowSize.Y;
-        if (WindowAspectRatio >= TargetAspectRatio)
-        {
-            _virtualSize = new Vector2(CurrentWindowSize.Y * TargetAspectRatio, CurrentWindowSize.Y);
-        }
-        else
-        {
-            _virtualSize = new Vector2(CurrentWindowSize.X, CurrentWindowSize.X / TargetAspectRatio);
-        }
-        _padding = new Vector2(CurrentWindowSize.X - _virtualSize.X, CurrentWindowSize.Y - _virtualSize.Y) * 0.5f;
     }
 
     private void UpdateDisplay(IntVector size, bool isFullScreen)
@@ -150,24 +130,13 @@ public class GHDisplay : IDisplay
         return new IntVector(Math.Max(size.X, MIN_SIZE.X), Math.Max(size.Y, MIN_SIZE.Y));
     }
 
-    // Inherited methods.
-    public Vector2 ToNormalizedPosition(Vector2 windowPosition)
+    public void Initialize()
     {
-        return (windowPosition - _padding) / _virtualSize;
+        _window.ClientSizeChanged += OnWindowSizeChangeEvent;
     }
 
-    public Vector2 ToWindowPosition(Vector2 normalizedPosition)
+    public void Dispose()
     {
-        return (normalizedPosition * _virtualSize) + _padding;
-    }
-
-    public Vector2 ToNormalizedSize(Vector2 sizeInWindow)
-    {
-        return (sizeInWindow) / _virtualSize;
-    }
-
-    public Vector2 ToWindowSize(Vector2 normalizedSize)
-    {
-        return normalizedSize * _virtualSize;
+        _window.ClientSizeChanged -= OnWindowSizeChangeEvent;
     }
 }

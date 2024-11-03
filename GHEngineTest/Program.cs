@@ -1,35 +1,25 @@
 ﻿using GHEngine.Assets.Def;
 using GHEngine.Assets.Loader;
 using GHEngine.Audio;
+using GHEngine.Audio.Modifier;
 using GHEngine.Audio.Source;
+using Microsoft.Xna.Framework;
+using SixLabors.Fonts;
+using SixLabors.Fonts.Unicode;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Memory;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
-namespace GHEngineTest
+namespace GHEngineTest;
+
+internal class Program
 {
-    internal class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            IAudioEngine AudioEngine = new GHAudioEngine(15);
-
-            IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"C:\Users\User\Desktop\test");
-            IAssetLoader AudioLoader = new SoundLoader(StreamOpener);
-
-            AssetDefinition Definition = new GHSoundDefinition("back from dead", AssetPath.File("bftd.mp3"));
-
-            IPreSampledSound Music = (IPreSampledSound)AudioLoader.Load(Definition);
-            IPreSampledSoundInstance MusicInstance = (IPreSampledSoundInstance)Music.CreateInstance();
-            MusicInstance.IsLooped = true;
-            MusicInstance.Sampler.SampleSpeed = 1d;
-            MusicInstance.Sampler.CustomSampleRate = 8000;
-            MusicInstance.Sampler.Volume = 1f;
-
-            AudioEngine.AddSoundInstance(MusicInstance);
-            AudioEngine.Start();
-
-            while (true)
-            {
-                Thread.Sleep(10_000);
-            }
-        }
+        using Game TargetGame = new TestGame();
+        TargetGame.Run();
     }
 }

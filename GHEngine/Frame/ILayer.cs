@@ -5,10 +5,6 @@ namespace GHEngine.Frame;
 
 public interface ILayer : IColorMaskable, IShadered, IRenderableItem
 {
-    // Static fields.
-    public const float DEFAULT_Z_INDEX = 1.0f;
-
-
     // Properties.
     string Name { get; }
     public int DrawableItemCount { get; }
@@ -17,10 +13,7 @@ public interface ILayer : IColorMaskable, IShadered, IRenderableItem
 
     // Methods.
     public void AddItem(IRenderableItem item);
-
     public void AddItem(IRenderableItem item, float zIndex);
-
     public void RemoveItem(IRenderableItem item);
-
     public void ClearItems();
 }

@@ -42,16 +42,16 @@ public struct GenericColorMask : IColorMaskable
 
     public Color CombinedMask => _combinedMask;
 
-
-    // Constructors.
-    public GenericColorMask() { }
-
-
     // private fields.
     private float _brightness = 1f;
     private float _opacity = 1f;
     private Color _combinedMask = Color.White;
     private Color _mask = Color.White;
+
+
+
+    // Constructors.
+    public GenericColorMask() { }
 
 
     // Private methods.

@@ -34,16 +34,13 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
         }
         set
         {
-            lock (this)
+            if (!value.HasValue || float.IsNaN(value.Value))
             {
-                if (!value.HasValue || float.IsNaN(value.Value))
-                {
-                    _customSampleRate = null;
-                }
-                else
-                {
-                    _customSampleRate = Math.Clamp(value.Value, SAMPLE_RATE_MIN, SAMPLE_RATE_MAX);
-                }
+                _customSampleRate = null;
+            }
+            else
+            {
+                _customSampleRate = Math.Clamp(value.Value, SAMPLE_RATE_MIN, SAMPLE_RATE_MAX);
             }
         }
     }
@@ -59,10 +56,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
         }
         set
         {
-            lock (this)
-            {
-                _sampleSpeed = double.IsNaN(value) ? SAMPLE_SPEED_DEFAULT : Math.Clamp(value, SAMPLE_SPEED_MIN, SAMPLE_SPEED_MAX);
-            }
+             _sampleSpeed = double.IsNaN(value) ? SAMPLE_SPEED_DEFAULT : Math.Clamp(value, SAMPLE_SPEED_MIN, SAMPLE_SPEED_MAX);
         }
     }
 
@@ -77,10 +71,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
         }
         set
         {
-            lock (this)
-            {
-                _volume = float.IsNaN(value) ? VOLUME_DEFAULT : Math.Clamp(value, VOLUME_MIN, VOLUME_MAX);
-            }
+             _volume = float.IsNaN(value) ? VOLUME_DEFAULT : Math.Clamp(value, VOLUME_MIN, VOLUME_MAX);
         }
     }
 
@@ -90,18 +81,15 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
     private double _sampleSpeed = SAMPLE_SPEED_DEFAULT;
     private float _volume = VOLUME_DEFAULT;
 
-    public event EventHandler<SoundLoopedArgs>? SoundLooped;
-    public event EventHandler<SoundFinishedArgs>? SoundFinished;
-
 
     // Private methods.
-    private float GetSample(double index, int channelIndex, int channelCount, float[] buffer)
+    private float GetSample(double index, int channelIndex, int channelCount, float[] samples)
     {
-        int LowerIndex = Math.Clamp((int)Math.Floor(index) * channelCount + channelIndex, 0, buffer.Length - 1);
-        int UpperIndex = Math.Clamp((int)Math.Ceiling(index) * channelCount + channelIndex, 0, buffer.Length);
+        int LowerIndex = Math.Clamp((int)Math.Floor(index) * channelCount + channelIndex, 0, samples.Length - 1);
+        int UpperIndex = Math.Clamp((int)Math.Ceiling(index) * channelCount + channelIndex, 0, samples.Length - 1);
 
-        float LowerSample =  buffer[LowerIndex];
-        float UpperSample =  buffer[UpperIndex];
+        float LowerSample =  samples[LowerIndex];
+        float UpperSample =  samples[UpperIndex];
         float InterpolationAmount = (float)(index % 1d);
 
         return LowerSample + ((UpperSample - LowerSample) * InterpolationAmount);
@@ -112,22 +100,20 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
         return isLooped || ((index >= 0d) && (index < sound.ChannelSampleCount));
     }
 
-    private double Sample(float[] buffer,
+    private PreSampledSoundResult SampleAudio(float[] buffer,
         double soundOffset, 
         int count, 
         bool isLooped,
-        double rate,
-        double speed,
-        float volume,
         IPreSampledSound sound,
         WaveFormat targetFormat)
     {
         double ChannelIndex = soundOffset;
         int SingleChannelCount = count / sound.Format.Channels;
         int BufferIndex;
-        double SampleRateRatio = rate / sound.Format.SampleRate;
-        double AdjustedSpeed = speed * ((double)sound.Format.SampleRate / (double)targetFormat.SampleRate);
-        double RateRange = 1 / SampleRateRatio;
+        double SampleRateRatio = (_customSampleRate ?? sound.Format.SampleRate) / sound.Format.SampleRate;
+        double AdjustedSpeed = _sampleSpeed * ((double)sound.Format.SampleRate / (double)targetFormat.SampleRate);
+        double RateRange = 1d / SampleRateRatio;
+        PreSampleSoundFinishType FinishType = PreSampleSoundFinishType.None;
 
         for (BufferIndex = 0; (BufferIndex < SingleChannelCount) && (BufferIndex < buffer.Length)
             && IsSamplingNeeded(sound, isLooped, ChannelIndex); BufferIndex++)
@@ -143,7 +129,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
                 float InterpolationAmount = (float)((ChannelIndex - LowerIndex) / RateRange);
 
                 buffer[(BufferIndex * sound.Format.Channels) + SelectedChannel] =
-                    (LowerSample + (UpperSample - LowerSample) * InterpolationAmount) * volume;
+                    (LowerSample + (UpperSample - LowerSample) * InterpolationAmount) * _volume;
             }
 
             ChannelIndex += AdjustedSpeed;
@@ -155,26 +141,23 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
             if (!isLooped)
             {
                 ChannelIndex = Math.Clamp(ChannelIndex, 0d, sound.ChannelSampleCount);
-                SoundFinished?.Invoke(this, new(sound));
+                FinishType = PreSampleSoundFinishType.Finished;
                 break;
             }
 
-            SoundLooped?.Invoke(this, new(sound));
+            FinishType = PreSampleSoundFinishType.Looped;
             ChannelIndex = ChannelIndex > 0d ? (ChannelIndex % sound.ChannelSampleCount)
                 : (sound.ChannelSampleCount - (Math.Abs(ChannelIndex) % sound.ChannelSampleCount));
         }
 
-        for (; BufferIndex < SingleChannelCount; BufferIndex++)
-        {
-            buffer[BufferIndex] = 0f;
-        }
-        
-        return ChannelIndex;
+        Array.Fill(buffer, 0f, BufferIndex * targetFormat.Channels, (SingleChannelCount - BufferIndex) * targetFormat.Channels);
+
+        return new(ChannelIndex, FinishType);
     }
 
 
     // Inherited methods.
-    public double Sample(float[] buffer,
+    public PreSampledSoundResult Sample(float[] buffer,
         double soundOffset, 
         int count, 
         bool isLooped,
@@ -186,18 +169,9 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
             throw new AudioSampleException($"Invalid number of samples requested: {count}");
         }
 
-        float? CustomSampleRateCur;
-        double SampleSpeedCur;
-        float VolumeCur;
+        double ClampedIndex = isLooped ? (Math.Max(0d, soundOffset) % sound.ChannelSampleCount)
+            : Math.Clamp(soundOffset, 0d, sound.ChannelSampleCount);
 
-        lock (this) // Do NOT retrieve these from properties, it will cause a deadlock, use private fields.
-        {
-            CustomSampleRateCur = _customSampleRate;
-            SampleSpeedCur = _sampleSpeed;
-            VolumeCur = _volume;
-        }
-
-        return Sample(buffer, Math.Max(soundOffset, 0d) % sound.ChannelSampleCount, count, isLooped,
-            CustomSampleRateCur ?? sound.Format.SampleRate, SampleSpeedCur, VolumeCur, sound, targetFormat);
+        return SampleAudio(buffer, ClampedIndex, count, isLooped, sound, targetFormat);
     }
 }

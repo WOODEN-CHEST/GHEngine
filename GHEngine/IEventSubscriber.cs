@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+namespace GHEngine;
 
-namespace Tests.Audio;
-
-public enum SoundInstanceState
+public interface IEventSubscriber
 {
-    Playing,
-    Stopped,
-    Finished
+    void SubscribeToEvents();
+    void UnsubscribeFromEvents();
 }

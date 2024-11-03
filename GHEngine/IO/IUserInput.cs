@@ -19,7 +19,7 @@ public interface IUserInput
     bool IsAltF4Allowed { get; set; }
     bool IsMouseVisible { get; set; }
     MouseCursor CurrentCursor { set; }
-    IntVector InputAreaSizePixels { get; set; }
+    Vector2 InputAreaSizePixels { get; set; }
 
 
     event EventHandler<TextInputEventArgs>? TextInput;

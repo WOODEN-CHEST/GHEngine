@@ -9,9 +9,9 @@ namespace GHEngine;
 
 public class AssetLoadException : Exception
 {
-    public AssetLoadException(AssetDefinition definition, string message) 
-        : base($"Failed to load asset of type \"{definition.Type.TypeName}\" and name \"{definition.Name}\". {message}")
+    public AssetLoadException(AssetDefinition definition, string message, Exception? innerException = null) 
+        : base($"Failed to load asset of type \"{definition.Type.TypeName}\" and name \"{definition.Name}\". {message}", innerException)
     { }
 
-    public AssetLoadException(string message) : base(message) { }
+    public AssetLoadException(string message, Exception? innerException = null) : base(message, innerException) { }
 }

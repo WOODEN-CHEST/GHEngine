@@ -71,7 +71,7 @@ public sealed class GHAnimationInstance : IAnimationInstance
 
 
     // Constructors.
-    internal GHAnimationInstance(ISpriteAnimation animation)
+    public GHAnimationInstance(ISpriteAnimation animation)
     {
         Source = animation ?? throw new ArgumentNullException(nameof(animation));
         Reset();

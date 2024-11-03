@@ -9,6 +9,7 @@ public class AnimationLoader : GHStreamAssetLoader
 {
     // Private fields.
     private readonly GraphicsDevice _graphicsDevice;
+    private readonly string[] _validExtensions = { ".png", ".jpg", ".gif", ".dds" };
 
 
     // Constructors.
@@ -19,6 +20,35 @@ public class AnimationLoader : GHStreamAssetLoader
 
 
     // Private methods.
+    private string GetPathWithFileExtension(string modifiedPath)
+    {
+        foreach (string Extension in _validExtensions)
+        {
+            string PathWithExtension = Path.ChangeExtension(modifiedPath, Extension);
+            if (StreamOpener.DoesFileExist(PathWithExtension))
+            {
+                return PathWithExtension;
+            }
+        }
+        return modifiedPath;
+    }
+
+    private Stream GetStream(GHAnimationDefinition definition, AssetPath framePath)
+    {
+        AssetPath FullPath;
+        string ModifiedPath = Path.Combine(definition.Type.RootPathName, framePath.Path);
+        if (framePath.Type == AssetPathType.FileSystem)
+        {
+            FullPath = new(GetPathWithFileExtension(ModifiedPath), AssetPathType.FileSystem);
+        }
+        else
+        {
+            FullPath = new(ModifiedPath, framePath.Type);
+        }
+
+        return StreamOpener.GetStream(FullPath);
+    }
+
     private GHSpriteAnimation LoadSpriteAnimation(GHAnimationDefinition definition)
     {
         List<Texture2D> Frames = new();
@@ -27,11 +57,10 @@ public class AnimationLoader : GHStreamAssetLoader
         {
             foreach (AssetPath FrameName in definition.Frames)
             {
-                AssetPath FullPath = new(Path.Combine(definition.Type.RootPathName, FrameName.Path), FrameName.Type);
-                Frames.Add(Texture2D.FromStream(_graphicsDevice, StreamOpener.GetStream(FullPath)));
+                Frames.Add(Texture2D.FromStream(_graphicsDevice, GetStream(definition, FrameName)));
             }
         }
-        catch (ContentLoadException e)
+        catch (Exception e)
         {
             throw new AssetLoadException(definition, e.ToString());
         }
