@@ -65,4 +65,6 @@ public class GHLanguage : ILanguage
     {
         throw new NotImplementedException();
     }
+
+    public void Dispose() { }
 }

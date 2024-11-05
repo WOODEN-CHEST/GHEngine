@@ -37,4 +37,6 @@ public class GHPreSampledSound : IPreSampledSound
     {
         return new GHPreSampledSoundInstance(this);
     }
+
+    public void Dispose() { }
 }

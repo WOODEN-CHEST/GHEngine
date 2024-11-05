@@ -64,13 +64,13 @@ public class TestGame : Game
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
 
-        SpriteItem Item = new SpriteItem(Provider.GetAsset<ISpriteAnimation>(
-            _mainFrame, AssetType.Animation, "image").CreateInstance())
-        {
-            Size = new()
-        };
+        int i = 0;
 
-        _mainFrame.Layers[0].AddItem(Item);
+        //SpriteItem Item = new SpriteItem(Provider.GetAsset<ISpriteAnimation>(
+        //    _mainFrame, AssetType.Animation, "image")!.CreateInstance());
+        //Item.Size = Vector2.One / Item.FrameSize * 10f;
+        //_mainFrame.Layers[0].AddItem(Item);
+        _mainFrame.Layers[0].AddItem(new TestBox());
     }
 
     protected override void BeginRun()
@@ -101,5 +101,15 @@ public class TestGame : Game
     {
         _renderer.RenderFrame(_mainFrame, _time);
         base.Draw(gameTime);
+    }
+
+    private class TestBox : IRenderableItem
+    {
+        public bool IsVisible { get; set; } = true;
+
+        public void Render(IRenderer renderer, IProgramTime time)
+        {
+            renderer.DrawRectangle(Color.Red, new(0f, 0f), new(1f, 1f), Vector2.Zero, 0f, null);
+        }
     }
 }

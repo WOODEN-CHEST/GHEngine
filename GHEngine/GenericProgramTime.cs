@@ -9,6 +9,5 @@ namespace GHEngine;
 public class GenericProgramTime : IModifiableProgramTime
 {
     public TimeSpan PassedTime { get; set; }
-
     public TimeSpan TotalTime { get; set; }
 }

@@ -19,5 +19,5 @@ public abstract class GHStreamAssetLoader : IAssetLoader
         StreamOpener = streamOpener ?? throw new ArgumentNullException(nameof(streamOpener));
     }
 
-    public abstract object Load(AssetDefinition definition);
+    public abstract IDisposable Load(AssetDefinition definition);
 }

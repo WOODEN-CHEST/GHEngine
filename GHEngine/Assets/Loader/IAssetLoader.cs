@@ -10,5 +10,5 @@ namespace GHEngine.Assets.Loader;
 public interface IAssetLoader
 {
     // Methods.
-    object Load(AssetDefinition definition);
+    IDisposable Load(AssetDefinition definition);
 }

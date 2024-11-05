@@ -19,6 +19,8 @@ internal class MissingLanguage : ILanguage
 
     public void Clear() { }
 
+    public void Dispose() { }
+
     public string GetText(string key) => "Missing Translation.";
 
     public void RemoveText(string key) { }

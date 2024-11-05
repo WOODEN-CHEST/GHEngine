@@ -19,7 +19,7 @@ public class LanguageLoader : GHStreamAssetLoader
 
 
     // Inherited methods.
-    public override object Load(AssetDefinition definition)
+    public override IDisposable Load(AssetDefinition definition)
     {
         if (definition is not GHLanguageDefinition LanguageDefinition)
         {

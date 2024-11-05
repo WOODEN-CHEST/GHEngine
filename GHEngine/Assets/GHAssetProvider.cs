@@ -17,7 +17,7 @@ public class GHAssetProvider : IAssetProvider
     private readonly ILogger? _logger;
 
     private readonly IAssetDefinitionCollection _definitions;
-    private readonly Dictionary<AssetType, object> _defaultAssets = new();
+    private readonly Dictionary<AssetType, IDisposable> _defaultAssets = new();
     private readonly Dictionary<AssetType, Dictionary<string, GHGameAsset>> _assets = new();
     
 
@@ -45,10 +45,10 @@ public class GHAssetProvider : IAssetProvider
         return Asset;
     }
 
-    private object? TryLoadAsset(AssetType type, string name)
+    private IDisposable? TryLoadAsset(AssetType type, string name)
     {
         AssetDefinition? Definition = _definitions.Get(type, name);
-        _defaultAssets.TryGetValue(type, out object? DefaultAsset);
+        _defaultAssets.TryGetValue(type, out IDisposable? DefaultAsset);
 
         if (Definition == null)
         {
@@ -69,7 +69,7 @@ public class GHAssetProvider : IAssetProvider
 
     private GHGameAsset? CreateAsset(AssetType type, string name)
     {
-        object? Asset = TryLoadAsset(type, name);
+        IDisposable? Asset = TryLoadAsset(type, name);
         if (Asset == null)
         {
             return null;
@@ -93,7 +93,7 @@ public class GHAssetProvider : IAssetProvider
 
 
     // Methods.
-    public void SetDefaultAsset(AssetType type, object asset)
+    public void SetDefaultAsset(AssetType type, IDisposable asset)
     {
         _defaultAssets[type] = asset ?? throw new ArgumentNullException(nameof(asset));
     }
@@ -143,6 +143,11 @@ public class GHAssetProvider : IAssetProvider
         GameAsset.RemoveUser(user);
         if (GameAsset.UserCount == 0)
         {
+            if (!_defaultAssets.Values.Contains(GameAsset.Value))
+            {
+                GameAsset.Value.Dispose();
+            }
+
             AssetDictionary.Remove(name);
         }
     }
@@ -175,7 +180,7 @@ public class GHAssetProvider : IAssetProvider
     private class GHGameAsset
     {
         // Fields.
-        internal object Value { get; }
+        internal IDisposable Value { get; }
         internal AssetType Type { get; }
         internal string Name { get; }
         internal int UserCount => _users.Count;
@@ -186,7 +191,7 @@ public class GHAssetProvider : IAssetProvider
 
 
         // Constructors.
-        internal GHGameAsset(object value, AssetType type, string name)
+        internal GHGameAsset(IDisposable value, AssetType type, string name)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
             Type = type;

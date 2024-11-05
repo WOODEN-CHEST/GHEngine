@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GHEngine.GameFont;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ public class TextComponent : IColorMaskable
         }
     }
 
-    public SpriteFont Font
+    public GHFontFamily FontFamily
     {
         get => _font;
         set
@@ -80,28 +81,86 @@ public class TextComponent : IColorMaskable
         }
     }
 
+    public bool IsBold
+    {
+        get => _isBold;
+        set
+        {
+            if (_isBold != value)
+            {
+                _isBold = value;
+                FontChange?.Invoke(this, new(this));
+            }
+        }
+    }
+
+
+    public bool IsItalic
+    {
+        get => _isItalic;
+        set
+        {
+            if (_isItalic != value)
+            {
+                _isItalic = value;
+                FontChange?.Invoke(this, new(this));
+            }
+        }
+    }
+
+    public float LineSpacing
+    {
+        get => _lineSpacing;
+        set
+        {
+            if (_lineSpacing != value)
+            {
+                _lineSpacing = value;
+                FontChange?.Invoke(this, new(this));
+            }
+        }
+    }
+
+    public float CharSpacing
+    {
+        get => _charSpacing;
+        set
+        {
+            if (_charSpacing != value)
+            {
+                _charSpacing = value;
+                FontChange?.Invoke(this, new(this));
+            }
+        }
+    }
+
     public event EventHandler<TextComponentArgs>? TextChange;
     public event EventHandler<TextComponentArgs>? FontChange;
     public event EventHandler<TextComponentArgs>? FontSizeChange;
 
 
     // Private fields.
-    private SpriteFont _font;
+    private GHFontFamily _font;
     private GenericColorMask _colorMask;
     private string _text = string.Empty;
     private Vector2? _cachedDrawSize = null;
     private float _fontSize = 1f;
 
+    private bool _isBold = false;
+    private bool _isItalic = false;
+    private float _lineSpacing = 0f;
+    private float _charSpacing = 0f;
+
 
     // Constructors.
-    public TextComponent(SpriteFont font)
+    public TextComponent(GHFontFamily font)
     {
-        Font = font;
+        FontFamily = font;
     }
 
-    public TextComponent(SpriteFont font, string text)
+    public TextComponent(GHFontFamily font, string text)
     {
-        Font = font;
+        FontFamily = font;
         Text = text;
     }
 
@@ -109,8 +168,6 @@ public class TextComponent : IColorMaskable
     // Methods.
     public Vector2 CalculateDrawSize(string text)
     {
-        // As long as the MeasureString method of MonoGame measures the Y size by using LineSpacing, this should work.
-        // If that changes, then a lot of stuff will break.
         return new Vector2(_font.MeasureString(text).X / Font.LineSpacing * ONE_UNIT_SIZE * FontSize,
                     FontSize * ONE_UNIT_SIZE); 
     }

@@ -44,7 +44,7 @@ public class GHLogger : ILogger
     // Private methods.
     private string GetFormattedTime(DateTime time)
     {
-        return $"{TwoDigitNumberToString(time.Hour)};{TwoDigitNumberToString(time.Minute)};{TwoDigitNumberToString(time.Second)}";
+        return $"{TwoDigitNumberToString(time.Hour)}:{TwoDigitNumberToString(time.Minute)}:{TwoDigitNumberToString(time.Second)}";
     }
 
     private string TwoDigitNumberToString(int number)
@@ -77,7 +77,7 @@ public class GHLogger : ILogger
 
     public string ConvertToLoggedMessage(LogLevel level, DateTime timeStamp, string message)
     {
-        return $"\n[{GetFormattedTime(timeStamp)}{(level == LogLevel.Info ? null : $"[{level}]")} {message}]";
+        return $"\n[{GetFormattedTime(timeStamp)}]{(level == LogLevel.Info ? null : $"[{level}]")} {message}";
     }
 
     public void Dispose()

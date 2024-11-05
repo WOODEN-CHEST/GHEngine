@@ -23,7 +23,7 @@ public class ShaderLoader : IAssetLoader
 
 
     // Inherited methods.
-    public object Load(AssetDefinition definition)
+    public IDisposable Load(AssetDefinition definition)
     {
         if (definition is not GHShaderDefinition ShaderDefinition)
         {

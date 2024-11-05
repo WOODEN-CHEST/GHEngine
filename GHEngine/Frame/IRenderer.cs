@@ -1,4 +1,4 @@
-﻿using GHEngine.Font;
+﻿using GHEngine.GameFont;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -6,6 +6,12 @@ namespace GHEngine.Frame;
 
 public interface IRenderer : IDisposable
 {
+    // Fields.
+    public float AspectRatio { get; }
+    public Vector2 BoundExpansion { get; }
+
+
+    // Methods.
     public void DrawSprite(Texture2D texture,
         Vector2 position,
         Rectangle? sourceArea,
@@ -16,7 +22,7 @@ public interface IRenderer : IDisposable
         SpriteEffects effects,
         SpriteEffect? shader);
 
-    public void DrawString(GHFont font,
+    public void DrawString(FontRenderProperties properties,
         string text,
         Vector2 position,
         Color mask,
@@ -42,5 +48,7 @@ public interface IRenderer : IDisposable
     public void DrawRectangle(Color color,
         Vector2 startingPoint,
         Vector2 EndPoint,
+        Vector2 origin,
+        float rotation,
         SpriteEffect? shader);
 }

@@ -54,6 +54,14 @@ public sealed class GHSpriteAnimation : ISpriteAnimation
         return new GHAnimationInstance(this);
     }
 
+    public void Dispose()
+    {
+        foreach (Texture2D Frame in _frames)
+        {
+            Frame.Dispose();
+        }
+    }
+
 
     // Operators.
     public Texture2D this[int index]

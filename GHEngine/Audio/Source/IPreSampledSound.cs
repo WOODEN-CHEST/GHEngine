@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Audio.Source;
 
-public interface IPreSampledSound : ISound
+public interface IPreSampledSound : ISound, IDisposable
 {
     // Fields.
     TimeSpan Duration { get; }

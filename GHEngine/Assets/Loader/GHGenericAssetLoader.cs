@@ -31,7 +31,7 @@ public class GHGenericAssetLoader : IAssetLoader
 
 
     // Inherited methods.
-    public object Load(AssetDefinition definition)
+    public IDisposable Load(AssetDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition, nameof(definition));
 

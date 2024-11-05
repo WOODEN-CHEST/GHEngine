@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Translatable;
 
-public interface ILanguage : ILanguageTextProvider 
+public interface ILanguage : ILanguageTextProvider, IDisposable
 {
     // Fields.
     public string NameLocal { get; }

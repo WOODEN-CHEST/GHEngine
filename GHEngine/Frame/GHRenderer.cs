@@ -1,4 +1,4 @@
-﻿using GHEngine.Font;
+﻿using GHEngine.GameFont;
 using GHEngine.Frame.Item;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
@@ -15,6 +15,11 @@ public class GHRenderer : IFrameRenderer
     private const float ONE_LINE_UNIT = 0.05f;
 
 
+    // Fields.
+    public float AspectRatio => _aspectRatio;
+    public Vector2 BoundExpansion => _boundExpansion;
+
+
     // Private fields.
     private readonly GraphicsDevice _graphicsDevice;
     private readonly SpriteBatch _spriteBatch;
@@ -25,6 +30,11 @@ public class GHRenderer : IFrameRenderer
 
     private RenderTarget2D? _frameRenderTarget = null;
     private RenderTarget2D? _layerRenderTarget = null;
+    
+    private float _aspectRatio;
+    private Vector2 _padding;
+    private Vector2 _boundExpansion;
+
 
 
     // Constructors.
@@ -59,10 +69,10 @@ public class GHRenderer : IFrameRenderer
 
     private void OnDisplayChangeEvent(object? sender, ScreenSizeChangeEventArgs args)
     {
-        CreateRenderTargets();
+        UpdateRenderProperties();
     }
 
-    private void CreateRenderTargets()
+    private void UpdateRenderProperties()
     {
         _frameRenderTarget?.Dispose();
         _layerRenderTarget?.Dispose();
@@ -71,6 +81,13 @@ public class GHRenderer : IFrameRenderer
             false, SurfaceFormat.Color, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
         _layerRenderTarget = new RenderTarget2D(_graphicsDevice, _display.CurrentWindowSize.X, _display.CurrentWindowSize.Y,
             false, SurfaceFormat.Color, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
+
+        _aspectRatio = (float)_display.CurrentWindowSize.X / (float)_display.CurrentWindowSize.Y;
+
+        Vector2 WindowSize = (Vector2)_display.CurrentWindowSize;
+        float UsableSpace = Math.Min(WindowSize.X, WindowSize.Y);
+        _padding = (WindowSize - new Vector2(UsableSpace)) * 0.5f;
+        _boundExpansion = new();
     }
 
     private void BeginSpriteBatch(SpriteEffect? shader)
@@ -97,7 +114,7 @@ public class GHRenderer : IFrameRenderer
 
     private Vector2 ToWindowPosition(Vector2 position)
     {
-        return position * (Vector2)_display.CurrentWindowSize;
+        return position * new Vector2(Math.Min(_display.CurrentWindowSize.X, _display.CurrentWindowSize.Y)) + _padding;
     }
 
     private Vector2 ToWindowScale(Vector2 textureSize, Vector2 scale)
@@ -145,11 +162,10 @@ public class GHRenderer : IFrameRenderer
 
     public void DrawLine(Color color, Vector2 startPoint, float rotation, float width, float length, SpriteEffect? shader)
     {
-        throw new NotImplementedException();
-        //EnsureShaderForDrawCall(shader);
-        //_spriteBatch.Draw(_lineTexture, _display.ToWindowPosition(startPoint), null, color, rotation,
-        //    new Vector2(0.5f, 0f), _display.ToWindowSize(new Vector2(ONE_LINE_UNIT * width, ONE_LINE_UNIT * length)),
-        //    SpriteEffects.None, LAYER_DEPTH);
+        EnsureShaderForDrawCall(shader);
+        _spriteBatch.Draw(_lineTexture, ToWindowPosition(startPoint), null, color, rotation,
+            new Vector2(0.5f, 0f), ToWindowPosition(new Vector2(ONE_LINE_UNIT * width, ONE_LINE_UNIT * length)),
+            SpriteEffects.None, LAYER_DEPTH);
     }
 
     public void Dispose()
@@ -162,8 +178,9 @@ public class GHRenderer : IFrameRenderer
         _display.ScreenSizeChange -= OnDisplayChangeEvent;
     }
 
-    public void DrawString(GHFont font, 
-        string text, Vector2 position,
+    public void DrawString(FontRenderProperties properties,
+        string text,
+        Vector2 position,
         Color mask,
         float rotation,
         Vector2 origin,
@@ -171,12 +188,25 @@ public class GHRenderer : IFrameRenderer
         SpriteEffects effects, 
         SpriteEffect? shader)
     {
-        throw new NotImplementedException();
+        //properties.FontFamily.
     }
 
-    public void DrawRectangle(Color color, Vector2 startingPoint, Vector2 EndPoint, SpriteEffect? shader)
+    public void DrawRectangle(Color color, Vector2 startingPoint, Vector2 EndPoint, Vector2 origin, float rotation, SpriteEffect? shader)
     {
-        throw new NotImplementedException();
+        EnsureShaderForDrawCall(shader);
+
+        Vector2 AbsoluteSize = (EndPoint - startingPoint) 
+            * Math.Min(_display.CurrentWindowSize.X, _display.CurrentWindowSize.Y);
+        Vector2 AbsoluteOrigin = origin * AbsoluteSize;
+        _spriteBatch.Draw(_lineTexture,
+            ToWindowPosition(startingPoint + AbsoluteOrigin),
+            null,
+            color,
+            rotation,
+            AbsoluteOrigin,
+            AbsoluteSize,
+            SpriteEffects.None,
+            LAYER_DEPTH);
     }
 
     public void RenderFrame(IGameFrame frameToDraw, IProgramTime time)
@@ -203,6 +233,6 @@ public class GHRenderer : IFrameRenderer
     public void Initialize()
     {
         _display.ScreenSizeChange += OnDisplayChangeEvent;
-        CreateRenderTargets();
+        UpdateRenderProperties();
     }
 }

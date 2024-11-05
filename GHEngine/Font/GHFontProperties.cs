@@ -4,6 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GHEngine.Font;
+namespace GHEngine.GameFont;
 
-public record struct GHFontProperties(float Size, bool IsBold, bool IsItalic) { }
+public record class GHFontProperties(float Size, bool IsBold, bool IsItalic, float LineSpacing, float CharSpacing) { }

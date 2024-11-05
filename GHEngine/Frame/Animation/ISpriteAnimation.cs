@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Frame.Animation;
 
-public interface ISpriteAnimation
+public interface ISpriteAnimation : IDisposable
 {
     // Fields.
     Texture2D[] Frames { get; }

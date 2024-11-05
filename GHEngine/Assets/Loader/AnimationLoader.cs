@@ -2,6 +2,9 @@
 using GHEngine.Frame.Animation;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace GHEngine.Assets.Loader;
 
@@ -20,6 +23,25 @@ public class AnimationLoader : GHStreamAssetLoader
 
 
     // Private methods.
+    private Texture2D LoadTexture(Stream stream)
+    {
+        try
+        {
+            using Image<Rgba32> LoadedImage = Image.Load<Rgba32>(stream);
+
+            Texture2D Texture = new Texture2D(_graphicsDevice, LoadedImage.Width, LoadedImage.Height, true, SurfaceFormat.ColorSRgb);
+            Texture.SetData(LoadedImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray())
+                .Select(pixel => new Microsoft.Xna.Framework.Color(pixel.Rgba)).ToArray());
+
+            return Texture;
+
+        }
+        catch (Exception e)
+        {
+            throw new AssetLoadException("Exception while loading image.", e);
+        };
+    }
+
     private string GetPathWithFileExtension(string modifiedPath)
     {
         foreach (string Extension in _validExtensions)
@@ -57,7 +79,7 @@ public class AnimationLoader : GHStreamAssetLoader
         {
             foreach (AssetPath FrameName in definition.Frames)
             {
-                Frames.Add(Texture2D.FromStream(_graphicsDevice, GetStream(definition, FrameName)));
+                Frames.Add(LoadTexture(GetStream(definition, FrameName)));
             }
         }
         catch (Exception e)
@@ -71,7 +93,7 @@ public class AnimationLoader : GHStreamAssetLoader
 
 
     // Inherited methods.
-    public override object Load(AssetDefinition definition)
+    public override IDisposable Load(AssetDefinition definition)
     {
         if (definition is not GHAnimationDefinition AnimationDefinition)
         {

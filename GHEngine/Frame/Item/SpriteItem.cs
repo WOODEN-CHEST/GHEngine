@@ -15,6 +15,7 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
     public float Rotation { get; set; } = 0f;
     Vector2 Origin { get; set; } = Vector2.Zero;
     public SpriteEffects Effects { get; set; } = SpriteEffects.None;
+    public Vector2 FrameSize => new(Animation.CurrentFrame.Width, Animation.CurrentFrame.Height);
 
     public IAnimationInstance Animation
     {
