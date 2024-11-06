@@ -11,10 +11,6 @@ namespace GHEngine.Frame.Item;
 
 public class TextComponent : IColorMaskable
 {
-    // Static fields.
-    public const float ONE_UNIT_SIZE = 0.003f;
-
-
     // Fields.
     public bool IsVisible { get; set; }
 
@@ -69,13 +65,13 @@ public class TextComponent : IColorMaskable
         set => _colorMask.Mask = value;
     }
 
-    public Vector2 DrawSize
+    public Vector2 RelativeDrawSize
     {
         get
         {
             if (_cachedDrawSize == null)
             {
-                _cachedDrawSize = CalculateDrawSize(Text);
+                _cachedDrawSize = CalculateRelativeDrawSize(Text);
             }
             return _cachedDrawSize.Value;
         }
@@ -166,9 +162,9 @@ public class TextComponent : IColorMaskable
 
 
     // Methods.
-    public Vector2 CalculateDrawSize(string text)
+    public Vector2 CalculateRelativeDrawSize(string text)
     {
-        return new Vector2(_font.MeasureString(text).X / Font.LineSpacing * ONE_UNIT_SIZE * FontSize,
-                    FontSize * ONE_UNIT_SIZE); 
+        GHFontProperties Properties = new(1f, IsBold, IsItalic, LineSpacing, CharSpacing);
+        return FontFamily.MeasureRelativeSize(Text, Properties);
     }
 }

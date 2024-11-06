@@ -8,7 +8,6 @@ public interface IRenderer : IDisposable
 {
     // Fields.
     public float AspectRatio { get; }
-    public Vector2 BoundExpansion { get; }
 
 
     // Methods.
@@ -20,7 +19,8 @@ public interface IRenderer : IDisposable
         Vector2 origin,
         Vector2 size,
         SpriteEffects effects,
-        SpriteEffect? shader);
+        SpriteEffect? shader,
+        SamplerState? state);
 
     public void DrawString(FontRenderProperties properties,
         string text,
@@ -29,26 +29,22 @@ public interface IRenderer : IDisposable
         float rotation,
         Vector2 origin,
         Vector2 size,
-        SpriteEffects effects,
-        SpriteEffect? shader);
+        SpriteEffect? shader,
+        SamplerState? state,
+        Vector2? precomputedRelativeDrawSize);
 
     public void DrawLine(Color color,
         Vector2 startPoint,
         Vector2 endPoint,
         float width,
-        SpriteEffect? shader);
-
-    public void DrawLine(Color color,
-        Vector2 startPoint,
-        float rotation,
-        float width,
-        float length,
-        SpriteEffect? shader);
+        SpriteEffect? shader,
+        SamplerState? state);
 
     public void DrawRectangle(Color color,
         Vector2 startingPoint,
         Vector2 EndPoint,
         Vector2 origin,
         float rotation,
-        SpriteEffect? shader);
+        SpriteEffect? shader,
+        SamplerState? state);
 }

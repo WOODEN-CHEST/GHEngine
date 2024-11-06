@@ -6,12 +6,18 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Runtime.CompilerServices;
 
 
 namespace GHEngine.GameFont;
 
 public class GHFontFamily : IDisposable
 {
+    // Static fields.
+    public const char REFERENCE_CHAR = 'A';
+    public const float DEFAULT_SIZE = 1f;
+
+
     // Fields.
     public string FamilyName { get; private init; }
     public string Name { get; private init; }
@@ -56,50 +62,88 @@ public class GHFontFamily : IDisposable
         RichTextOptions TargetTextOptions = new(TargetFont);
         TargetTextOptions.Origin = new(0f, 0f);
         FontRectangle DrawSize = TextMeasurer.MeasureAdvance(character.ToString(), TargetTextOptions);
-        using Image<Rgba32> FontImage = new((int)Math.Ceiling(DrawSize.Width), (int)Math.Ceiling(DrawSize.Height));
+        using Image<Rgba32> FontImage = new((int)Math.Ceiling(DrawSize.Width), (int)Math.Ceiling(DrawSize.Height), new Rgba32(0u));
         FontImage.Mutate(context => context.DrawText(TargetTextOptions, character.ToString(), SixLabors.ImageSharp.Color.White));
 
-        Texture2D MonoGameTexture = new(_graphicsDevice, FontImage.Width, FontImage.Height, false, SurfaceFormat.ColorSRgb);
-        MonoGameTexture.SetData(FontImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray())
-            .Select(color => new Microsoft.Xna.Framework.Color(color.Rgba)).ToArray());
+        Texture2D MonoGameTexture = new(_graphicsDevice, FontImage.Width, FontImage.Height, false, SurfaceFormat.Color);
+        IEnumerable<Rgba32> Pixels = FontImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray());
+        Microsoft.Xna.Framework.Color[] TextureData = Pixels.Select(
+            pixel => new Microsoft.Xna.Framework.Color(pixel.R, pixel.G, pixel.B, pixel.A)).ToArray();
+        MonoGameTexture.SetData(TextureData);
+
         return MonoGameTexture;
     }
 
 
     // Methods.
-    public Vector2 MeasurePixelSize(string text, GHFontProperties properties)
-    {
-        ArgumentNullException.ThrowIfNull(properties, nameof(properties));
-        ArgumentNullException.ThrowIfNull(text, nameof(text));
+    //public Vector2 MeasurePixelSize(string text, GHFontProperties properties)
+    //{
+    //    ArgumentNullException.ThrowIfNull(properties, nameof(properties));
+    //    ArgumentNullException.ThrowIfNull(text, nameof(text));
+    //    float LineHeight = GetCharTexture(REFERENCE_CHAR, properties).Height;
 
-        Vector2 Size = Vector2.Zero;
-        Vector2 CurrentLineSize = Vector2.Zero;
+    //    Vector2 Size = Vector2.Zero;
+    //    Vector2 CurrentLineSize = Vector2.Zero;
+    //    for (int i = 0; i < text.Length; i++)
+    //    {
+    //        char Character = text[i];
+    //        if (CurrentLineSize.X > 0f)
+    //        {
+    //            CurrentLineSize.X += properties.CharSpacing * LineHeight;
+    //        }
+
+    //        Texture2D CharTexture = GetCharTexture(Character, properties);
+    //        CurrentLineSize.Y = LineHeight;
+
+    //        if (Character == '\n')
+    //        {
+    //            CurrentLineSize = Vector2.Zero;
+
+    //            Size.Y += LineHeight + (properties.LineSpacing * LineHeight);
+    //            continue;
+    //        }
+    //        else
+    //        {
+    //            CurrentLineSize.X += CharTexture.Width;
+    //            Size.X = Math.Max(Size.X, CurrentLineSize.X);
+    //        }
+    //    }
+        
+    //    return Size;
+    //}
+
+    public Vector2 MeasureRelativeSize(string text, GHFontProperties properties)
+    {
+        Vector2 RelativeSize = Vector2.Zero;
+        Vector2 CurrentLineRelativeSize = Vector2.Zero;
+        TextOptions MeasureOptions = new(GetFont(properties));
+
         for (int i = 0; i < text.Length; i++)
         {
             char Character = text[i];
-            if (CurrentLineSize.X > 0f)
+            if (CurrentLineRelativeSize.X > 0f)
             {
-                CurrentLineSize.X += properties.CharSpacing;
+                CurrentLineRelativeSize.X += properties.CharSpacing;
             }
 
-            Texture2D CharTexture = GetCharTexture(Character, properties);
-            CurrentLineSize.Y = Math.Max(CurrentLineSize.Y, CharTexture.Height);
+            CurrentLineRelativeSize.Y = 1f;
 
             if (Character == '\n')
             {
-                CurrentLineSize = Vector2.Zero;
-                
-                Size.Y += GetCharTexture(Character, properties).Height + properties.LineSpacing;
+                CurrentLineRelativeSize = Vector2.Zero;
+
+                RelativeSize.Y += 1f + properties.LineSpacing;
                 continue;
             }
             else
             {
-                CurrentLineSize.X += CharTexture.Width;
-                Size.X = Math.Max(Size.X, CurrentLineSize.X);
+                CurrentLineRelativeSize.X += TextMeasurer.MeasureAdvance(Character.ToString(), MeasureOptions).Width;
+                RelativeSize.X = Math.Max(RelativeSize.X, CurrentLineRelativeSize.X);
             }
         }
-        
-        return Size;
+
+        RelativeSize.Y = Math.Max(RelativeSize.Y, CurrentLineRelativeSize.Y);
+        return RelativeSize;
     }
 
     public void ClearOldFonts(int fontsToRemain)

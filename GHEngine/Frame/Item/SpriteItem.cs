@@ -44,13 +44,15 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
     public bool IsVisible { get; set; }
     public SpriteEffect? Shader { get; set; }
 
+    public SamplerState? TargetSampleState { get; set; } = null;
+
 
     // Private fields.
     private GenericColorMask _colorMask = new();
     private IAnimationInstance _animation;
 
 
-    // Constuctors.
+    // Constructors.
     public SpriteItem(IAnimationInstance instance)
     {
         Animation = instance;
@@ -82,7 +84,7 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
     public void Render(IRenderer renderer, IProgramTime time)
     {
         renderer.DrawSprite(_animation.CurrentFrame, Position, _animation.DrawRegion, _colorMask.CombinedMask,
-            Rotation, Origin, Size, Effects, Shader);
+            Rotation, Origin, Size, Effects, Shader, TargetSampleState);
     }
 
     public void Update(IProgramTime time)

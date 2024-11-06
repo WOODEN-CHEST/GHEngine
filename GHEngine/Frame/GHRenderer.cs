@@ -12,12 +12,10 @@ public class GHRenderer : IFrameRenderer
 {
     // Private static fields.
     private const float LAYER_DEPTH = 0.5f;
-    private const float ONE_LINE_UNIT = 0.05f;
-
+   
 
     // Fields.
     public float AspectRatio => _aspectRatio;
-    public Vector2 BoundExpansion => _boundExpansion;
 
 
     // Private fields.
@@ -26,14 +24,15 @@ public class GHRenderer : IFrameRenderer
     private readonly IDisplay _display;
 
     private SpriteEffect? _currentShader = null;
+    private SamplerState _currentState;
     private readonly Texture2D _lineTexture;
 
     private RenderTarget2D? _frameRenderTarget = null;
     private RenderTarget2D? _layerRenderTarget = null;
     
     private float _aspectRatio;
-    private Vector2 _padding;
-    private Vector2 _boundExpansion;
+
+    private readonly SamplerState _defaultSamplerState = SamplerState.LinearWrap;
 
 
 
@@ -49,7 +48,7 @@ public class GHRenderer : IFrameRenderer
         _display = display ?? throw new ArgumentNullException(nameof(display));
     }
 
-
+     
     // Private methods.
     private void RenderColorMaskableOntoTarget(IColorMaskable maskable, SpriteEffect? effect, Texture2D source, RenderTarget2D? target)
     {
@@ -61,7 +60,7 @@ public class GHRenderer : IFrameRenderer
         };
 
         _graphicsDevice.SetRenderTarget(target);
-        BeginSpriteBatch(effect);
+        BeginSpriteBatch(effect, SamplerState.AnisotropicWrap);
         _spriteBatch.Draw(source, Vector2.Zero, null, ItemMask.CombinedMask, 0f, Vector2.Zero, 1f,
             SpriteEffects.None, LAYER_DEPTH);
         _spriteBatch.End();
@@ -83,27 +82,22 @@ public class GHRenderer : IFrameRenderer
             false, SurfaceFormat.Color, DepthFormat.Depth16, 0, RenderTargetUsage.PreserveContents);
 
         _aspectRatio = (float)_display.CurrentWindowSize.X / (float)_display.CurrentWindowSize.Y;
-
-        Vector2 WindowSize = (Vector2)_display.CurrentWindowSize;
-        float UsableSpace = Math.Min(WindowSize.X, WindowSize.Y);
-        _padding = (WindowSize - new Vector2(UsableSpace)) * 0.5f;
-        _boundExpansion = new();
     }
 
-    private void BeginSpriteBatch(SpriteEffect? shader)
+    private void BeginSpriteBatch(SpriteEffect? shader, SamplerState sampler)
     {
         _currentShader = shader;
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, SamplerState.LinearClamp, DepthStencilState.None,
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, sampler, DepthStencilState.None,
             RasterizerState.CullCounterClockwise, shader, null);
     }
 
-    private void EnsureShaderForDrawCall(SpriteEffect? shader)
+    private void EnsurePropertiesForDrawCall(SpriteEffect? shader, SamplerState sampler)
     {
-        if (_currentShader != shader)
+        if ((_currentShader != shader) || (sampler != _currentState))
         {
             _spriteBatch.End();
             _currentShader = shader;
-            BeginSpriteBatch(_currentShader);
+            BeginSpriteBatch(_currentShader, sampler);
         }
     }
 
@@ -114,20 +108,13 @@ public class GHRenderer : IFrameRenderer
 
     private Vector2 ToWindowPosition(Vector2 position)
     {
-        return position * new Vector2(Math.Min(_display.CurrentWindowSize.X, _display.CurrentWindowSize.Y)) + _padding;
+        return position * (Vector2)_display.CurrentWindowSize;
     }
 
     private Vector2 ToWindowScale(Vector2 textureSize, Vector2 scale)
     {
         IntVector CurrentWindowSize = _display.CurrentWindowSize;
-        if (CurrentWindowSize.X > CurrentWindowSize.Y)
-        {
-            return new Vector2(CurrentWindowSize.Y) / textureSize * scale;
-        }
-        else
-        {
-            return new Vector2(CurrentWindowSize.X) / textureSize * scale;
-        }
+        return (Vector2)CurrentWindowSize / textureSize * scale;
     }
 
 
@@ -140,9 +127,11 @@ public class GHRenderer : IFrameRenderer
         Vector2 origin,
         Vector2 size,
         SpriteEffects effects,
-        SpriteEffect? shader)
+        SpriteEffect? shader,
+        SamplerState? state)
     {
-        EnsureShaderForDrawCall(shader);
+        EnsurePropertiesForDrawCall(shader, state ?? _defaultSamplerState);
+
         _spriteBatch.Draw(texture,
             ToWindowPosition(position),
             sourceArea, 
@@ -154,28 +143,26 @@ public class GHRenderer : IFrameRenderer
             LAYER_DEPTH);
     }
 
-    public void DrawLine(Color color, Vector2 startPoint, Vector2 endPoint, float width, SpriteEffect? shader)
+    public void DrawLine(Color color, 
+        Vector2 startPoint, 
+        Vector2 endPoint, 
+        float width, 
+        SpriteEffect? shader,
+        SamplerState state)
     {
+        EnsurePropertiesForDrawCall(shader, state);
         Vector2 Change = endPoint - startPoint;
-        DrawLine(color, startPoint, MathF.Atan2(-Change.Y, Change.X), width, Change.Length(), shader);
-    }
 
-    public void DrawLine(Color color, Vector2 startPoint, float rotation, float width, float length, SpriteEffect? shader)
-    {
-        EnsureShaderForDrawCall(shader);
-        _spriteBatch.Draw(_lineTexture, ToWindowPosition(startPoint), null, color, rotation,
-            new Vector2(0.5f, 0f), ToWindowPosition(new Vector2(ONE_LINE_UNIT * width, ONE_LINE_UNIT * length)),
-            SpriteEffects.None, LAYER_DEPTH);
-    }
-
-    public void Dispose()
-    {
-        _display.ScreenSizeChange -= OnDisplayChangeEvent;
-        _layerRenderTarget?.Dispose();
-        _frameRenderTarget?.Dispose();
-        _lineTexture.Dispose();
-        _spriteBatch.Dispose();
-        _display.ScreenSizeChange -= OnDisplayChangeEvent;
+        _spriteBatch.Draw(_lineTexture,
+            ToWindowPosition(startPoint),
+            null,
+            color,
+            MathF.Atan2(Change.Y, Change.X * AspectRatio),
+            new Vector2(0f, 0.5f),
+            new Vector2((ToWindowPosition(endPoint) - ToWindowPosition(startPoint)).Length(),
+            width * Math.Min(_display.WindowedSize.X, _display.WindowedSize.Y)),
+            SpriteEffects.None,
+            LAYER_DEPTH);
     }
 
     public void DrawString(FontRenderProperties properties,
@@ -184,26 +171,78 @@ public class GHRenderer : IFrameRenderer
         Color mask,
         float rotation,
         Vector2 origin,
-        Vector2 size, 
-        SpriteEffects effects, 
-        SpriteEffect? shader)
+        Vector2 size,
+        SpriteEffect? shader,
+        SamplerState? state,
+        Vector2? precomputedRelativeSize)
     {
-        //properties.FontFamily.
+        EnsurePropertiesForDrawCall(shader, state ?? _defaultSamplerState);
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        Vector2 IntendedWindowTextSize = (Vector2)_display.CurrentWindowSize * size;
+
+        Vector2 RelativeSize = precomputedRelativeSize ?? properties.FontFamily.MeasureRelativeSize(text,
+            new(GHFontFamily.DEFAULT_SIZE, properties.IsBold, properties.IsItalic, properties.LineSpacing, properties.CharSpacing));
+        Vector2 ScalingPerUnit = size / RelativeSize;
+        Vector2 TextureScaling = 
+
+        GHFontProperties FontProperties = new(_display.CurrentWindowSize.Y / RelativeSize.Y * size.Y, 
+            properties.IsBold, properties.IsItalic, properties.LineSpacing, properties.CharSpacing);
+
+
+        Vector2 RelativeTextPositionInScreen = position;
+        for (int i = 0; i < text.Length; i++)
+        {
+            Vector2 RotatedPosition = RelativeTextPositionInScreen + (origin * size) + Vector2.Rotate((origin * -size), rotation);
+
+            char Character = text[i];
+            if (Character == '\n')
+            {
+                RelativeTextPositionInScreen = new(position.X,
+                    RelativeTextPositionInScreen.Y + (size.Y / RelativeSize.Y));
+                continue;
+            }
+
+            Texture2D CharTexture = properties.FontFamily.GetCharTexture(Character, FontProperties);
+            Vector2 ToOriginVectorRelative = (position + origin * size) - RelativeTextPositionInScreen;
+            Vector2 ToOriginVectorAbsolute = ToOriginVectorRelative * (Vector2)_display.WindowedSize;
+
+            _spriteBatch.Draw(CharTexture,
+                ToWindowPosition(RelativeTextPositionInScreen),
+                null,
+                mask,
+                0f,
+                Vector2.Zero,
+                new Vector2(1),
+                SpriteEffects.None,
+                LAYER_DEPTH);
+
+            RelativeTextPositionInScreen.X += (float)CharTexture.Width / (float)CharTexture.Height * ScalingPerUnit.X;
+        }
     }
 
-    public void DrawRectangle(Color color, Vector2 startingPoint, Vector2 EndPoint, Vector2 origin, float rotation, SpriteEffect? shader)
-    {
-        EnsureShaderForDrawCall(shader);
 
-        Vector2 AbsoluteSize = (EndPoint - startingPoint) 
-            * Math.Min(_display.CurrentWindowSize.X, _display.CurrentWindowSize.Y);
+    public void DrawRectangle(Color color, 
+        Vector2 startingPoint,
+        Vector2 EndPoint, 
+        Vector2 origin, 
+        float rotation,
+        SpriteEffect? shader,
+        SamplerState? state)
+    {
+        EnsurePropertiesForDrawCall(shader, state ?? _defaultSamplerState);
+
+        Vector2 AbsoluteSize = (EndPoint - startingPoint) * (Vector2)_display.CurrentWindowSize;
         Vector2 AbsoluteOrigin = origin * AbsoluteSize;
         _spriteBatch.Draw(_lineTexture,
-            ToWindowPosition(startingPoint + AbsoluteOrigin),
+            ToWindowPosition(startingPoint) + AbsoluteOrigin,
             null,
             color,
             rotation,
-            AbsoluteOrigin,
+            origin,
             AbsoluteSize,
             SpriteEffects.None,
             LAYER_DEPTH);
@@ -218,14 +257,16 @@ public class GHRenderer : IFrameRenderer
                 continue;
             }
 
+
             _graphicsDevice.SetRenderTarget(_layerRenderTarget);
-            _graphicsDevice.Clear(Color.Transparent);
-            BeginSpriteBatch(null);
+            _graphicsDevice.Clear(Color.Black);
+            BeginSpriteBatch(null, _defaultSamplerState);
             Layer.Render(this, time);
             _spriteBatch.End();
 
             RenderColorMaskableOntoTarget(Layer, Layer.Shader, _layerRenderTarget!, _frameRenderTarget);
         }
+
 
         RenderColorMaskableOntoTarget(frameToDraw, frameToDraw.Shader, _frameRenderTarget!, null);
     }
@@ -234,5 +275,15 @@ public class GHRenderer : IFrameRenderer
     {
         _display.ScreenSizeChange += OnDisplayChangeEvent;
         UpdateRenderProperties();
+    }
+
+    public void Dispose()
+    {
+        _display.ScreenSizeChange -= OnDisplayChangeEvent;
+        _layerRenderTarget?.Dispose();
+        _frameRenderTarget?.Dispose();
+        _lineTexture.Dispose();
+        _spriteBatch.Dispose();
+        _display.ScreenSizeChange -= OnDisplayChangeEvent;
     }
 }

@@ -3,18 +3,11 @@ using GHEngine.Assets;
 using GHEngine.Assets.Def;
 using GHEngine.Assets.Loader;
 using GHEngine.Frame;
-using GHEngine.Frame.Animation;
 using GHEngine.Frame.Item;
+using GHEngine.GameFont;
 using GHEngine.IO;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace GHEngineTest;
 
@@ -54,23 +47,20 @@ public class TestGame : Game
         IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"C:\Users\User\Desktop\test");
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
         {
-            new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false)
+            new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false),
+            new GHFontDefinition("font", AssetPath.File("font"))
         };
 
         GHGenericAssetLoader GenericLoader = new();
         GenericLoader.SetTypeLoader(AssetType.Animation, new AnimationLoader(StreamOpener, GraphicsDevice));
+        GenericLoader.SetTypeLoader(AssetType.Font, new FontLoader(StreamOpener, GraphicsDevice));
         IAssetProvider Provider = new GHAssetProvider(GenericLoader, AssetDefinitions, null);
 
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
 
-        int i = 0;
-
-        //SpriteItem Item = new SpriteItem(Provider.GetAsset<ISpriteAnimation>(
-        //    _mainFrame, AssetType.Animation, "image")!.CreateInstance());
-        //Item.Size = Vector2.One / Item.FrameSize * 10f;
-        //_mainFrame.Layers[0].AddItem(Item);
-        _mainFrame.Layers[0].AddItem(new TestBox());
+        _mainFrame.Layers[0].AddItem(new TestBox() { Family = 
+            Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font")!}, -0.1f);
     }
 
     protected override void BeginRun()
@@ -105,11 +95,15 @@ public class TestGame : Game
 
     private class TestBox : IRenderableItem
     {
+        public required GHFontFamily Family { get; init; }
         public bool IsVisible { get; set; } = true;
 
         public void Render(IRenderer renderer, IProgramTime time)
         {
-            renderer.DrawRectangle(Color.Red, new(0f, 0f), new(1f, 1f), Vector2.Zero, 0f, null);
+            string Text = "Hello World!";
+
+            renderer.DrawString(new(Family, false, false, 0f, 0f), Text, Vector2.Zero, Color.White,
+                0.5f, new(0.5f, 0.5f), new Vector2(1f, 1f), null, null, null);
         }
     }
 }

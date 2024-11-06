@@ -220,7 +220,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                 CurrentLine.Append(Character);
                 continue;
             }
-            if (component.CalculateDrawSize(CurrentLine.ToString()).X > maxXSize)
+            if (component.CalculateRelativeDrawSize(CurrentLine.ToString()).X > maxXSize)
             {
                 Lines.Add(CurrentLine.ToString());
                 CurrentLine.Clear();
@@ -252,16 +252,16 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                     _drawLines.Add(new DrawLine());
                 }
 
-                _drawLines[^1].Components.Add(new TextComponent(Component.Font, Lines[i])
+                _drawLines[^1].Components.Add(new TextComponent(Component.FontFamily, Lines[i])
                 {
                     Mask = Component.Mask,
                     Brightness = Component.Brightness,
                     Opacity = Component.Opacity,
                     FontSize = Component.FontSize
                 });
-                if (Component.DrawSize.X > Bounds.X)
+                if (Component.RelativeDrawSize.X > Bounds.X)
                 {
-                    Component.FontSize *= Bounds.X / Component.DrawSize.X;
+                    Component.FontSize *= Bounds.X / Component.RelativeDrawSize.X;
                 }
             }
         }
@@ -335,7 +335,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                     TextAlignOption.Right => (Position.X - OriginCenter.X) + DrawSize.X - Line.DrawSize.X + UsedXSpace,
                     _ => throw new EnumValueException(nameof(Alignment), Alignment)
                 };
-                DrawPosition.Y = Position.Y - OriginCenter.Y + (Line.DrawSize.Y - Component.DrawSize.Y) + UsedYSpace;
+                DrawPosition.Y = Position.Y - OriginCenter.Y + (Line.DrawSize.Y - Component.RelativeDrawSize.Y) + UsedYSpace;
 
                 Vector2 RelativeRotationOrigin = (Position - OriginCenter) - DrawPosition;
                 GenericColorMask ColorMask = new()
@@ -345,10 +345,21 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                     Opacity = Component.Opacity
                 };
 
-                renderer.DrawString(Component.Font, Component.Text, DrawPosition, ColorMask.CombinedMask, Rotation,
-                    RelativeRotationOrigin, Vector2.One, Effects, Shader);
+                renderer.DrawString(
+                    new(Component.FontFamily, Component.FontSize, Component.IsBold, 
+                        Component.IsItalic, Component.LineSpacing, Component.CharSpacing), 
+                    Component.Text,
+                    DrawPosition,
+                    ColorMask.CombinedMask,
+                    Rotation,
+                    RelativeRotationOrigin,
+                    Vector2.One, 
+                    Effects,
+                    Shader,
+                    null,
+                    Component.RelativeDrawSize);
 
-                UsedXSpace += Component.DrawSize.X;
+                UsedXSpace += Component.RelativeDrawSize.X;
             }
             UsedYSpace += Line.DrawSize.Y;
         }
@@ -405,7 +416,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
             foreach (TextComponent Component in Components)
             {
-                Vector2 ComponentSize = Component.DrawSize;
+                Vector2 ComponentSize = Component.RelativeDrawSize;
                 LineSize.X += ComponentSize.X;
                 LineSize.Y = Math.Max(LineSize.Y, ComponentSize.Y);
             }

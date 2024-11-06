@@ -1,10 +1,13 @@
 ﻿using GHEngine.Assets.Def;
 using GHEngine.Frame.Animation;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace GHEngine.Assets.Loader;
 
@@ -27,14 +30,16 @@ public class AnimationLoader : GHStreamAssetLoader
     {
         try
         {
+            // Such a inefficient way to do it.g
             using Image<Rgba32> LoadedImage = Image.Load<Rgba32>(stream);
 
-            Texture2D Texture = new Texture2D(_graphicsDevice, LoadedImage.Width, LoadedImage.Height, true, SurfaceFormat.ColorSRgb);
-            Texture.SetData(LoadedImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray())
-                .Select(pixel => new Microsoft.Xna.Framework.Color(pixel.Rgba)).ToArray());
+            Texture2D Texture = new Texture2D(_graphicsDevice, LoadedImage.Width, LoadedImage.Height, false, SurfaceFormat.Color);
+            IEnumerable<Rgba32> RgbaPixels = LoadedImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray());
+            Microsoft.Xna.Framework.Color[] MonoGamePixels = RgbaPixels.Select(
+                pixel => new Microsoft.Xna.Framework.Color(pixel.R, pixel.G, pixel.B, pixel.A)).ToArray();
+            Texture.SetData(MonoGamePixels);
 
             return Texture;
-
         }
         catch (Exception e)
         {
