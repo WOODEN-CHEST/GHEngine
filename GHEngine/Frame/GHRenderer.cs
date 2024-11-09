@@ -37,7 +37,7 @@ public class GHRenderer : IFrameRenderer
 
 
     // Constructors.
-    public GHRenderer(GraphicsDevice device, IDisplay display)
+    private GHRenderer(GraphicsDevice device, IDisplay display)
     {
         _graphicsDevice = device ?? throw new ArgumentNullException(nameof(device));
         _spriteBatch = new SpriteBatch(device);
@@ -46,6 +46,15 @@ public class GHRenderer : IFrameRenderer
         _lineTexture.SetData(new Color[] { Color.White });
 
         _display = display ?? throw new ArgumentNullException(nameof(display));
+    }
+
+
+    // Static methods.
+    public static GHRenderer Create(GraphicsDevice device, IDisplay display)
+    {
+        GHRenderer Renderer = new(device, display);
+        Renderer.Initialize();
+        return Renderer;
     }
 
      
@@ -113,8 +122,13 @@ public class GHRenderer : IFrameRenderer
 
     private Vector2 ToWindowScale(Vector2 textureSize, Vector2 scale)
     {
-        IntVector CurrentWindowSize = _display.CurrentWindowSize;
-        return (Vector2)CurrentWindowSize / textureSize * scale;
+        return (Vector2)_display.CurrentWindowSize / textureSize * scale;
+    }
+
+    private void Initialize()
+    {
+        _display.ScreenSizeChange += OnDisplayChangeEvent;
+        UpdateRenderProperties();
     }
 
 
@@ -172,6 +186,7 @@ public class GHRenderer : IFrameRenderer
         float rotation,
         Vector2 origin,
         Vector2 size,
+        SpriteEffects effects,
         SpriteEffect? shader,
         SamplerState? state,
         Vector2? precomputedRelativeSize)
@@ -183,21 +198,19 @@ public class GHRenderer : IFrameRenderer
         }
 
         Vector2 IntendedWindowTextSize = (Vector2)_display.CurrentWindowSize * size;
-
         Vector2 RelativeSize = precomputedRelativeSize ?? properties.FontFamily.MeasureRelativeSize(text,
             new(GHFontFamily.DEFAULT_SIZE, properties.IsBold, properties.IsItalic, properties.LineSpacing, properties.CharSpacing));
-        Vector2 ScalingPerUnit = size / RelativeSize;
-        Vector2 TextureScaling = 
 
-        GHFontProperties FontProperties = new(_display.CurrentWindowSize.Y / RelativeSize.Y * size.Y, 
-            properties.IsBold, properties.IsItalic, properties.LineSpacing, properties.CharSpacing);
+        Vector2 ScalingPerUnit = size / RelativeSize;
+        float AbsoluteFontSize = _display.CurrentWindowSize.Y / RelativeSize.Y * size.Y;
+        Vector2 TextureScaling = new(IntendedWindowTextSize.X / AbsoluteFontSize / RelativeSize.X, 1f);
+        GHFontProperties FontProperties = new(AbsoluteFontSize,  properties.IsBold,
+            properties.IsItalic, properties.LineSpacing, properties.CharSpacing);
 
 
         Vector2 RelativeTextPositionInScreen = position;
         for (int i = 0; i < text.Length; i++)
         {
-            Vector2 RotatedPosition = RelativeTextPositionInScreen + (origin * size) + Vector2.Rotate((origin * -size), rotation);
-
             char Character = text[i];
             if (Character == '\n')
             {
@@ -208,15 +221,17 @@ public class GHRenderer : IFrameRenderer
 
             Texture2D CharTexture = properties.FontFamily.GetCharTexture(Character, FontProperties);
             Vector2 ToOriginVectorRelative = (position + origin * size) - RelativeTextPositionInScreen;
-            Vector2 ToOriginVectorAbsolute = ToOriginVectorRelative * (Vector2)_display.WindowedSize;
+            Vector2 ToOriginVectorWindowAbsolute = ToOriginVectorRelative * (Vector2)_display.WindowedSize;
+            Vector2 ToOriginVectorSpriteAbsolute = ToOriginVectorWindowAbsolute 
+                * new Vector2(1f / TextureScaling.X, 1f / TextureScaling.Y);
 
             _spriteBatch.Draw(CharTexture,
-                ToWindowPosition(RelativeTextPositionInScreen),
+                ToWindowPosition(RelativeTextPositionInScreen) + ToOriginVectorWindowAbsolute,
                 null,
                 mask,
-                0f,
-                Vector2.Zero,
-                new Vector2(1),
+                rotation,
+                ToOriginVectorSpriteAbsolute,
+                TextureScaling,
                 SpriteEffects.None,
                 LAYER_DEPTH);
 
@@ -250,6 +265,13 @@ public class GHRenderer : IFrameRenderer
 
     public void RenderFrame(IGameFrame frameToDraw, IProgramTime time)
     {
+        _graphicsDevice.Clear(Color.Black);
+
+        if (frameToDraw.LayerCount == 0)
+        {
+            return;
+        }
+
         foreach (ILayer Layer in frameToDraw.Layers)
         {
             if ((Layer.DrawableItemCount == 0) || !Layer.IsVisible)
@@ -257,9 +279,8 @@ public class GHRenderer : IFrameRenderer
                 continue;
             }
 
-
             _graphicsDevice.SetRenderTarget(_layerRenderTarget);
-            _graphicsDevice.Clear(Color.Black);
+            _graphicsDevice.Clear(Color.Transparent);
             BeginSpriteBatch(null, _defaultSamplerState);
             Layer.Render(this, time);
             _spriteBatch.End();
@@ -267,14 +288,7 @@ public class GHRenderer : IFrameRenderer
             RenderColorMaskableOntoTarget(Layer, Layer.Shader, _layerRenderTarget!, _frameRenderTarget);
         }
 
-
         RenderColorMaskableOntoTarget(frameToDraw, frameToDraw.Shader, _frameRenderTarget!, null);
-    }
-
-    public void Initialize()
-    {
-        _display.ScreenSizeChange += OnDisplayChangeEvent;
-        UpdateRenderProperties();
     }
 
     public void Dispose()
@@ -284,6 +298,5 @@ public class GHRenderer : IFrameRenderer
         _frameRenderTarget?.Dispose();
         _lineTexture.Dispose();
         _spriteBatch.Dispose();
-        _display.ScreenSizeChange -= OnDisplayChangeEvent;
     }
 }

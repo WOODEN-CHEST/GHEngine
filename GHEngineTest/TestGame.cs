@@ -8,6 +8,7 @@ using GHEngine.GameFont;
 using GHEngine.IO;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace GHEngineTest;
 
@@ -39,8 +40,7 @@ public class TestGame : Game
 
         _display = new GHDisplay(_graphicsManager, Window);
         _display.Initialize();
-        _renderer = new GHRenderer(_graphicsManager.GraphicsDevice, _display);
-        _renderer.Initialize();
+        _renderer = GHRenderer.Create(_graphicsManager.GraphicsDevice, _display);
         _mainFrame = new GHGameFrame();
         _mainFrame.AddLayer(new GHLayer("0"));
 
@@ -59,8 +59,14 @@ public class TestGame : Game
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
 
-        _mainFrame.Layers[0].AddItem(new TestBox() { Family = 
-            Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font")!}, -0.1f);
+        GHFontFamily FontFamily = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font")!;
+
+        //TextBox Text = new();
+        //Text.Add(new TextComponent(, "Hello World"!));
+
+
+        //_mainFrame.Layers[0].AddItem(Text);
+        _mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily });
     }
 
     protected override void BeginRun()
@@ -100,10 +106,11 @@ public class TestGame : Game
 
         public void Render(IRenderer renderer, IProgramTime time)
         {
-            string Text = "Hello World!";
+            string TextDouble = "Hello World W";
+            string Text = "Hello World 1";
 
-            renderer.DrawString(new(Family, false, false, 0f, 0f), Text, Vector2.Zero, Color.White,
-                0.5f, new(0.5f, 0.5f), new Vector2(1f, 1f), null, null, null);
+            renderer.DrawString(new(Family, false, false, 0f, 0f), TextDouble, new(0.0f, 0.0f), Color.White,
+                0f, new(0.5f, 0.5f), new Vector2(0.9f, 0.9f), SpriteEffects.None, null, null, null);
         }
     }
 }

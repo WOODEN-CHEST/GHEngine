@@ -114,11 +114,6 @@ public class GHAudioEngine : IAudioEngine
         }
     }
 
-    private void OnSoundFinishEvent(SoundFinishedArgs args)
-    {
-        _sounds.Remove(args.Instance);
-    }
-
     private void ExecuteScheduledActions()
     {
         foreach (Action ScheduledAction in _scheduledActions)
@@ -128,21 +123,26 @@ public class GHAudioEngine : IAudioEngine
         _scheduledActions.Clear();
     }
 
+    private void OnSoundInstanceFinishEvent(object? sender, SoundFinishedArgs args)
+    {
+        RemoveSoundInstance(args.Instance);
+    }
+
+
     // Inherited methods.
     public void AddSoundInstance(ISoundInstance sound)
     {
-        lock (_sounds)
+        if (_sounds.Count < _maxSounds)
         {
-            if (_sounds.Count < _maxSounds)
-            {
-                _sounds.Add(sound);
-            }
+            _sounds.Add(sound);
+            sound.SoundFinished += OnSoundInstanceFinishEvent;
         }
     }
 
     public void RemoveSoundInstance(ISoundInstance sound)
     {
         _sounds.Remove(sound);
+        sound.SoundFinished -= OnSoundInstanceFinishEvent;
     }
 
     public void ClearSounds()

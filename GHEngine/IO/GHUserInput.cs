@@ -52,9 +52,11 @@ public class GHUserInput : IUserInput
         set
         {
             _inputAreaSizePixels = value;
-
+            InputAreaRatio = value.X / value.Y;
         }
     }
+
+    public float InputAreaRatio { get; private set; }
 
     public event EventHandler<TextInputEventArgs>? TextInput;
     public event EventHandler<FileDropEventArgs>? FileDrop;

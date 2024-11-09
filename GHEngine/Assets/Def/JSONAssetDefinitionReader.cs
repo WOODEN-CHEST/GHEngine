@@ -108,9 +108,14 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionReader
     // Inherited methods.
     public void Read(IAssetDefinitionCollection definitions, string directoryPath)
     {
+        if (!Directory.Exists(directoryPath))
+        {
+            return;
+        }
+
         foreach (string FilePath in Directory.GetFiles(directoryPath, "*.json", SearchOption.AllDirectories))
         {
-            using (FileStream FileData = File.OpenRead(directoryPath))
+            using (FileStream FileData = File.OpenRead(FilePath))
             {
                 Read(definitions, FileData);
             }

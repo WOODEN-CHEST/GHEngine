@@ -9,5 +9,4 @@ namespace GHEngine.Frame;
 public interface IFrameRenderer : IRenderer
 {
     void RenderFrame(IGameFrame frameToDraw, IProgramTime time);
-    void Initialize();
 }

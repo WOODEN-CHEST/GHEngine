@@ -20,6 +20,7 @@ public interface IUserInput
     bool IsMouseVisible { get; set; }
     MouseCursor CurrentCursor { set; }
     Vector2 InputAreaSizePixels { get; set; }
+    float InputAreaRatio { get; }
 
 
     event EventHandler<TextInputEventArgs>? TextInput;

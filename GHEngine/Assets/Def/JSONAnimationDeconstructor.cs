@@ -35,7 +35,7 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
         AssetPath[] FramePaths = new AssetPath[Frames.Count];
         for (int i = 0; i < Frames.Count; i++)
         {
-            FramePaths[i] = _pathDeconstructor.GetPath(FramePaths[i]);
+            FramePaths[i] = _pathDeconstructor.GetPath(Frames.GetVerified<object>(i));
         }
         return FramePaths;
     }

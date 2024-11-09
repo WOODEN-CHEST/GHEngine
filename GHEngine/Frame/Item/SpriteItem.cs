@@ -11,11 +11,14 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
 {
     // Fields.
     public Vector2 Position { get; set; } = Vector2.Zero;
+    public Vector2 PositionOrigin { get; set; } = Vector2.Zero;
     public Vector2 Size { get; set; } = Vector2.One;
     public float Rotation { get; set; } = 0f;
-    Vector2 Origin { get; set; } = Vector2.Zero;
+    public Vector2 Origin { get; set; } = Vector2.Zero;
     public SpriteEffects Effects { get; set; } = SpriteEffects.None;
     public Vector2 FrameSize => new(Animation.CurrentFrame.Width, Animation.CurrentFrame.Height);
+    public bool IsSizeAdjusted { get; set; } = true;
+    public bool IsPositionAdjusted { get; set; } = false;
 
     public IAnimationInstance Animation
     {
@@ -78,13 +81,25 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
         return new(this);
     }
 
+    public Vector2 GetAdjustedDrawSize(float aspectRatio)
+    {
+        return GHMath.GetWindowAdjustedVector(Size, aspectRatio);
+    }
+
+    public Vector2 GetAdjustedPosition(float aspectRatio)
+    {
+        return PositionOrigin + GHMath.GetWindowAdjustedVector(Position, aspectRatio);
+    }
 
 
     // Inherited methods.
     public void Render(IRenderer renderer, IProgramTime time)
     {
-        renderer.DrawSprite(_animation.CurrentFrame, Position, _animation.DrawRegion, _colorMask.CombinedMask,
-            Rotation, Origin, Size, Effects, Shader, TargetSampleState);
+        Vector2 DrawPosition = IsPositionAdjusted ? GetAdjustedPosition(renderer.AspectRatio) : Position;
+        Vector2 DrawSize = IsSizeAdjusted ? GetAdjustedDrawSize(renderer.AspectRatio) : Size;
+
+        renderer.DrawSprite(_animation.CurrentFrame, DrawPosition, _animation.DrawRegion, _colorMask.CombinedMask,
+            Rotation, Origin, DrawSize, Effects, Shader, TargetSampleState);
     }
 
     public void Update(IProgramTime time)

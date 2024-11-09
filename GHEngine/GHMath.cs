@@ -125,4 +125,16 @@ public static class GHMath
         DVector2 RotatedPoint = MiddleAreaPoint + DVector2.Rotate(point - MiddleAreaPoint, -areaRotation);
         return (MinX <= RotatedPoint.X) && (RotatedPoint.X <= MaxX) && (MinY <= RotatedPoint.Y) && (RotatedPoint.Y <= MaxY);
     }
+
+    public static Vector2 GetWindowAdjustedVector(Vector2 vector, float aspectRatio)
+    {
+        if (aspectRatio >= 1f)
+        {
+            return new Vector2(1f / aspectRatio, 1f) * vector;
+        }
+        else
+        {
+            return new Vector2(1f, aspectRatio) * vector;
+        }
+    }
 }

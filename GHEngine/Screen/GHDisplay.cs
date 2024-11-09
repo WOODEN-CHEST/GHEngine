@@ -47,7 +47,7 @@ public class GHDisplay : IDisplay
             {
                 return;
             }
-            UpdateDisplay(CurrentWindowSize, value);
+            UpdateDisplay(value ? FullScreenSize : WindowedSize, value);
         }
     }
 

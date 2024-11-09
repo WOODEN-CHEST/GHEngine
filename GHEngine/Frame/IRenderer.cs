@@ -29,6 +29,7 @@ public interface IRenderer : IDisposable
         float rotation,
         Vector2 origin,
         Vector2 size,
+        SpriteEffects effects,
         SpriteEffect? shader,
         SamplerState? state,
         Vector2? precomputedRelativeDrawSize);

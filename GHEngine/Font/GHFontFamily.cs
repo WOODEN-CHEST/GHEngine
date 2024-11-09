@@ -130,7 +130,7 @@ public class GHFontFamily : IDisposable
 
             if (Character == '\n')
             {
-                CurrentLineRelativeSize = Vector2.Zero;
+                CurrentLineRelativeSize = new(0f, 1f);
 
                 RelativeSize.Y += 1f + properties.LineSpacing;
                 continue;
@@ -142,7 +142,7 @@ public class GHFontFamily : IDisposable
             }
         }
 
-        RelativeSize.Y = Math.Max(RelativeSize.Y, CurrentLineRelativeSize.Y);
+        RelativeSize.Y += CurrentLineRelativeSize.Y;
         return RelativeSize;
     }
 

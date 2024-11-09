@@ -346,7 +346,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                 };
 
                 renderer.DrawString(
-                    new(Component.FontFamily, Component.FontSize, Component.IsBold, 
+                    new(Component.FontFamily, Component.IsBold, 
                         Component.IsItalic, Component.LineSpacing, Component.CharSpacing), 
                     Component.Text,
                     DrawPosition,
@@ -354,7 +354,6 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                     Rotation,
                     RelativeRotationOrigin,
                     Vector2.One, 
-                    Effects,
                     Shader,
                     null,
                     Component.RelativeDrawSize);
