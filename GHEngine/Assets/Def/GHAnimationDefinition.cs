@@ -13,7 +13,7 @@ public class GHAnimationDefinition : AssetDefinition
     public AssetPath[] Frames => _frames.ToArray();
     public double FPS { get; private init; }
     public int Step { get; private init; }
-    public Rectangle? DrawRegion { get; private init; }
+    public RectangleF? DrawRegion { get; private init; }
     public bool IsLooped { get; private init; }
     public bool IsAnimated { get; private init; }
 
@@ -27,7 +27,7 @@ public class GHAnimationDefinition : AssetDefinition
         AssetPath[] frames,
         double fps,
         int step,
-        Rectangle? drawRegion,
+        RectangleF? drawRegion,
         bool isLooped,
         bool isAnimated)
         : base(AssetType.Animation, name)

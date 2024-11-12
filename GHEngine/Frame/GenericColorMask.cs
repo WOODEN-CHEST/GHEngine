@@ -53,6 +53,13 @@ public struct GenericColorMask : IColorMaskable
     // Constructors.
     public GenericColorMask() { }
 
+    public GenericColorMask(Color mask, float brightness, float opacity)
+    {
+        Mask = mask;
+        Brightness = brightness;
+        Opacity = opacity;
+    }
+
 
     // Private methods.
     private void UpdateCombinedMask()

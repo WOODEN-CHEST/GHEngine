@@ -37,6 +37,13 @@ public class GHLayer : ILayer
 
     public IRenderableItem[] Items => _renderableItems.ToArray();
     public int DrawableItemCount => _renderableItems.Count;
+    public Vector2 Position { get; set; } = Vector2.Zero;
+    public Vector2 Size { get; set; } = Vector2.One;
+    public Vector2 Origin { get; set; } = Vector2.Zero;
+    public float Rotation { get; set; } = 0f;
+    public RectangleF? DrawBounds { get; set; } = null;
+    public SamplerState? CustomSamplerState { get; set; } = null;
+    public SpriteEffects Effects { get; set; } = SpriteEffects.None;
 
 
     // Private fields.

@@ -17,7 +17,7 @@ public interface ISpriteAnimation : IDisposable
     double DefaultFPS { get; }
     int DefaultFrameStep { get; }
     bool DefaultIsLooped { get; }
-    Rectangle? DefaultDrawRegion { get; }
+    RectangleF? DefaultDrawRegion { get; }
     bool DefaultIsAnimating { get; }
 
 

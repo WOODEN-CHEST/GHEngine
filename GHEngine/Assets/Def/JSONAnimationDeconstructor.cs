@@ -40,19 +40,32 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
         return FramePaths;
     }
 
-    private Rectangle? GetDrawRegion(JSONCompound animation)
+    private float GetAsFloat(object targetObject, string entryName)
+    {
+        if (targetObject is long LongObj)
+        {
+            return (float)(long)targetObject;
+        }
+        if (targetObject is double DoubleObj)
+        {
+            return (float)DoubleObj;
+        }
+        throw new JSONEntryException($"Entry \"{entryName}\" is not a number.");
+    }
+
+    private RectangleF? GetDrawRegion(JSONCompound animation)
     {
         if (!animation.Get(KEY_DRAW_REGION, out JSONCompound? Compound))
         {
             return null;
         }
 
-        int X = (int)Compound!.GetVerified<long>(KEY_X);
-        int Y = (int)Compound.GetVerified<long>(KEY_Y);
-        int Width = (int)Compound.GetVerified<long>(KEY_WIDTH);
-        int Height = (int)Compound.GetVerified<long>(KEY_HEIGHT);
+        float X = GetAsFloat(animation.GetVerified<object>(KEY_X), KEY_X);
+        float Y = GetAsFloat(animation.GetVerified<object>(KEY_Y), KEY_Y);
+        float Width = GetAsFloat(animation.GetVerified<object>(KEY_WIDTH), KEY_WIDTH);
+        float Height = GetAsFloat(animation.GetVerified<object>(KEY_HEIGHT), KEY_HEIGHT);
 
-        return new Rectangle(X, Y, Width, Height);
+        return new RectangleF(X, Y, Width, Height);
     }
 
 
@@ -60,7 +73,7 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
     public override AssetDefinition DeconstructDefinition(string assetName, JSONCompound compound)
     {
         AssetPath[] Frames = GetAnimationFrames(compound);
-        Rectangle? DrawRegion = GetDrawRegion(compound);
+        RectangleF? DrawRegion = GetDrawRegion(compound);
         double FPS = compound.GetVerifiedOrDefault(KEY_FPS, 60d);
         int Step = (int)compound.GetVerifiedOrDefault<long>(KEY_STEP, 1);
         bool IsLooped = compound.GetVerifiedOrDefault(KEY_IS_LOOPED, true);

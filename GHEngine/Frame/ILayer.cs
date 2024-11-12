@@ -1,19 +1,27 @@
 ﻿using GHEngine.Frame.Item;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace GHEngine.Frame;
 
-public interface ILayer : IColorMaskable, IShadered, IRenderableItem
+public interface ILayer : IRenderableItem, IColorMaskable, IShadered
 {
     // Properties.
     string Name { get; }
-    public int DrawableItemCount { get; }
-    public IRenderableItem[] Items { get; }
+    int DrawableItemCount { get; }
+    IRenderableItem[] Items { get; }
+    Vector2 Position { get; set; }
+    Vector2 Size { get; set; }
+    Vector2 Origin { get; set; }
+    float Rotation { get; set; }
+    RectangleF? DrawBounds { get; set; }
+    SamplerState? CustomSamplerState { get; set; }
+    SpriteEffects Effects { get; set; }
 
 
     // Methods.
-    public void AddItem(IRenderableItem item);
-    public void AddItem(IRenderableItem item, float zIndex);
-    public void RemoveItem(IRenderableItem item);
-    public void ClearItems();
+    void AddItem(IRenderableItem item);
+    void AddItem(IRenderableItem item, float zIndex);
+    void RemoveItem(IRenderableItem item);
+    void ClearItems();
 }

@@ -7,7 +7,7 @@ public sealed class GHAnimationInstance : IAnimationInstance
 {
     // Fields.
     public ISpriteAnimation Source { get; private init; }
-    public Rectangle? DrawRegion { get; set; } = null;
+    public RectangleF? DrawRegion { get; set; } = null;
     public bool IsLooped { get; set; }
 
     public bool IsAnimating

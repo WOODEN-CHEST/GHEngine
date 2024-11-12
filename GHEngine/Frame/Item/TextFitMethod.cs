@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Frame.Item;
 
-public enum TextAlignOption
+public enum TextFitMethod
 {
-    Left,
-    Center,
-    Right,
-    Justified
+    Cut,
+    Resize
 }

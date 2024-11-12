@@ -13,7 +13,7 @@ public sealed class GHSpriteAnimation : ISpriteAnimation
     public double DefaultFPS { get; private init; }
     public int DefaultFrameStep { get; private init; }
     public bool DefaultIsLooped { get; private init; }
-    public Rectangle? DefaultDrawRegion { get; private init; }
+    public RectangleF? DefaultDrawRegion { get; private init; }
     public bool DefaultIsAnimating { get; private init; }
 
 
@@ -25,7 +25,7 @@ public sealed class GHSpriteAnimation : ISpriteAnimation
     public GHSpriteAnimation(double fps, 
         int step,
         bool isLooped,
-        Rectangle? drawRegion,
+        RectangleF? drawRegion,
         bool isAnimating,
         params Texture2D[] frames)
     {

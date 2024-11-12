@@ -10,12 +10,10 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 {
     // Fields.
     public SpriteEffect? Shader { get; set; }
-    public SpriteEffects Effects { get; set; }
     public bool IsVisible { get; set; }
     public Vector2 Position { get; set; }
     public float Rotation { get; set; }
     public Vector2 Origin { get; set; }
-    public Vector2 Bounds { get; set; }
     public TextAlignOption Alignment { get; set; }
 
     public int Length
@@ -48,7 +46,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         set => _colorMask.Mask = value;
     }
 
-    public TextComponent[] Components => _components.ToArray();
+    public IEnumerable<TextComponent> Components => _components;
     public int ComponentCount => _components.Count;
 
     public int MaxCharacters
@@ -56,12 +54,12 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         get => _maxCharacters;
         set
         {
-            _maxCharacters = value;
+            _maxCharacters = Math.Max(0, value);
             EnsureCharacterCount();
         }
     }
 
-    public bool AllowNewlines
+    public bool IsNewlineAllowed
     {
         get => _allowNewlines;
         set
@@ -74,7 +72,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         }
     }
 
-    public Vector2 DrawSize
+    public Vector2 RelativeDrawSize
     {
         get
         {
@@ -86,21 +84,52 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         }
     }
 
+    public Vector2 MaxSize
+    {
+        get => _maxSize;
+        set
+        {
+            _maxSize = value;
+            UpdateDrawLines();
+        }
+    }
+
+    public TextFitMethod FitMethod
+    {
+        get => _fitMethod;
+        set
+        {
+            _fitMethod = value;
+            UpdateDrawLines();
+        }
+    }
+
 
     // Private fields.
-    private GenericColorMask _colorMask;
+    private GenericColorMask _colorMask = new();
     private readonly List<TextComponent> _components = new();
 
     private int _maxCharacters = int.MaxValue;
     private bool _allowNewlines = true;
     private Vector2? _cachedDrawSize = null;
-    private List<DrawLine>? _drawLines = new();
+    private DrawLine[]? _drawLines = null;
+    private Vector2 _maxSize = new Vector2(float.PositiveInfinity);
+    private TextFitMethod _fitMethod = TextFitMethod.Resize;
 
     private string? _cachedText = null;
 
 
     // Constructors.
     public TextBox() { }
+
+    public TextBox(IEnumerable<TextComponent> components)
+    {
+        ArgumentNullException.ThrowIfNull(components, nameof(components));
+        foreach (TextComponent Component in components)
+        {
+            Add(Component);
+        }
+    }
 
 
     // Methods.
@@ -234,49 +263,51 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
     private void UpdateDrawLines()
     {
-        if (_drawLines != null)
-        {
-            return;
-        }
-
-        _drawLines = new() { new DrawLine() };
+        List<DrawLine> DrawLines = new();
+        Vector2 CurrentSize = Vector2.Zero;
 
         foreach (TextComponent Component in _components)
         {
-            string[] Lines = SplitComponentIntoLines(Component, Bounds.X);
+            string[] TextLines = SplitComponentIntoLines(Component, MaxSize.X);
 
-            for (int i = 0; i < Lines.Length; i++)
+            for (int LineIndex = 0; LineIndex < TextLines.Length; LineIndex++)
             {
-                if (i > 0)
+                if ((LineIndex > 0) || (DrawLines.Count == 0))
                 {
-                    _drawLines.Add(new DrawLine());
+                    DrawLines.Add(new DrawLine());
                 }
 
-                _drawLines[^1].Components.Add(new TextComponent(Component.FontFamily, Lines[i])
+                DrawLine CurrentDrawLine = DrawLines[^1];
+
+                TextComponent LineComponent = new(Component) { Text = TextLines[LineIndex] };
+                Vector2 ComponentSize = 
+
+                if ((FitMethod == TextFitMethod.Cut) && ((Component.RelativeDrawSize.X > MaxSize.X)
+                    || (Component.RelativeDrawSize.Y > MaxSize.Y)))
                 {
-                    Mask = Component.Mask,
-                    Brightness = Component.Brightness,
-                    Opacity = Component.Opacity,
-                    FontSize = Component.FontSize
-                });
-                if (Component.RelativeDrawSize.X > Bounds.X)
+                    continue;
+                }
+                if (FitMethod == TextFitMethod.Resize)
                 {
                     Component.FontSize *= Bounds.X / Component.RelativeDrawSize.X;
                 }
+
             }
         }
 
-        foreach (DrawLine Line in _drawLines)
+        foreach (DrawLine Line in DrawLines)
         {
             Line.UpdateDrawSize();
         }
+
+        _drawLines = DrawLines.ToArray();
     }
 
     private void OnComponentTextChangeEvent(object? sender, TextComponentArgs args)
     {
         _cachedText = null;
         _drawLines = null;
-        if (!AllowNewlines)
+        if (!IsNewlineAllowed)
         {
             EnsureNoNewlines();
         }
@@ -318,8 +349,12 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     // Inherited methods.
     public void Render(IRenderer renderer, IProgramTime time)
     {
-        Vector2 OriginCenter = DrawSize * Origin;
-        UpdateDrawLines();
+        Vector2 OriginCenter = RelativeDrawSize * Origin;
+        if (_drawLines == null)
+        {
+            UpdateDrawLines();
+        }
+        
 
         float UsedYSpace = 0f;
         foreach (DrawLine Line in _drawLines!)
@@ -331,8 +366,8 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                 DrawPosition.X = Alignment switch
                 {
                     TextAlignOption.Left => (Position.X - OriginCenter.X) + UsedXSpace,
-                    TextAlignOption.Center => (Position.X - OriginCenter.X) + ((DrawSize.X - Line.DrawSize.X) * 0.5f) + UsedXSpace,
-                    TextAlignOption.Right => (Position.X - OriginCenter.X) + DrawSize.X - Line.DrawSize.X + UsedXSpace,
+                    TextAlignOption.Center => (Position.X - OriginCenter.X) + ((RelativeDrawSize.X - Line.DrawSize.X) * 0.5f) + UsedXSpace,
+                    TextAlignOption.Right => (Position.X - OriginCenter.X) + RelativeDrawSize.X - Line.DrawSize.X + UsedXSpace,
                     _ => throw new EnumValueException(nameof(Alignment), Alignment)
                 };
                 DrawPosition.Y = Position.Y - OriginCenter.Y + (Line.DrawSize.Y - Component.RelativeDrawSize.Y) + UsedYSpace;
@@ -366,10 +401,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
     public IEnumerator<TextComponent> GetEnumerator()
     {
-        foreach (TextComponent Component in _components)
-        {
-            yield return Component;
-        }
+        return _components.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -404,7 +436,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     private class DrawLine
     {
         // Fields.
-        public List<TextComponent> Components { get; private set; } = new();
+        public List<TextComponent> Components { get; private init; } = new();
         public Vector2 DrawSize { get; private set; }
 
 

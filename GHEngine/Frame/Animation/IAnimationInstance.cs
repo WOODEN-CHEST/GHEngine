@@ -12,7 +12,7 @@ public interface IAnimationInstance : ITimeUpdatable
 {
     // Fields.
     ISpriteAnimation Source { get; }
-    Rectangle? DrawRegion { get; set; }
+    RectangleF? DrawRegion { get; set; }
     public bool IsAnimating { get; set; }
     double FPS { get; set; }
     int FrameStep { get; set; }

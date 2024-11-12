@@ -56,12 +56,15 @@ public class GHFontFamily : IDisposable
         return CreatedFont;
     }
 
-    private Texture2D LoadTexture(char character, GHFontProperties properties)
+    private Texture2D? LoadTexture(char character, GHFontProperties properties)
     {
         Font TargetFont = GetFont(properties);
         RichTextOptions TargetTextOptions = new(TargetFont);
         TargetTextOptions.Origin = new(0f, 0f);
         FontRectangle DrawSize = TextMeasurer.MeasureAdvance(character.ToString(), TargetTextOptions);
+
+
+
         using Image<Rgba32> FontImage = new((int)Math.Ceiling(DrawSize.Width), (int)Math.Ceiling(DrawSize.Height), new Rgba32(0u));
         FontImage.Mutate(context => context.DrawText(TargetTextOptions, character.ToString(), SixLabors.ImageSharp.Color.White));
 
@@ -76,41 +79,10 @@ public class GHFontFamily : IDisposable
 
 
     // Methods.
-    //public Vector2 MeasurePixelSize(string text, GHFontProperties properties)
-    //{
-    //    ArgumentNullException.ThrowIfNull(properties, nameof(properties));
-    //    ArgumentNullException.ThrowIfNull(text, nameof(text));
-    //    float LineHeight = GetCharTexture(REFERENCE_CHAR, properties).Height;
-
-    //    Vector2 Size = Vector2.Zero;
-    //    Vector2 CurrentLineSize = Vector2.Zero;
-    //    for (int i = 0; i < text.Length; i++)
-    //    {
-    //        char Character = text[i];
-    //        if (CurrentLineSize.X > 0f)
-    //        {
-    //            CurrentLineSize.X += properties.CharSpacing * LineHeight;
-    //        }
-
-    //        Texture2D CharTexture = GetCharTexture(Character, properties);
-    //        CurrentLineSize.Y = LineHeight;
-
-    //        if (Character == '\n')
-    //        {
-    //            CurrentLineSize = Vector2.Zero;
-
-    //            Size.Y += LineHeight + (properties.LineSpacing * LineHeight);
-    //            continue;
-    //        }
-    //        else
-    //        {
-    //            CurrentLineSize.X += CharTexture.Width;
-    //            Size.X = Math.Max(Size.X, CurrentLineSize.X);
-    //        }
-    //    }
-        
-    //    return Size;
-    //}
+    public Vector2 MeasureAbsoluteSize(string text, GHFontProperties properties)
+    {
+        return MeasureRelativeSize(text, properties) * properties.Size;
+    }
 
     public Vector2 MeasureRelativeSize(string text, GHFontProperties properties)
     {
@@ -121,11 +93,6 @@ public class GHFontFamily : IDisposable
         for (int i = 0; i < text.Length; i++)
         {
             char Character = text[i];
-            if (CurrentLineRelativeSize.X > 0f)
-            {
-                CurrentLineRelativeSize.X += properties.CharSpacing;
-            }
-
             CurrentLineRelativeSize.Y = 1f;
 
             if (Character == '\n')
@@ -137,6 +104,10 @@ public class GHFontFamily : IDisposable
             }
             else
             {
+                if (CurrentLineRelativeSize.X > 0f)
+                {
+                    CurrentLineRelativeSize.X += properties.CharSpacing;
+                }
                 CurrentLineRelativeSize.X += TextMeasurer.MeasureAdvance(Character.ToString(), MeasureOptions).Width;
                 RelativeSize.X = Math.Max(RelativeSize.X, CurrentLineRelativeSize.X);
             }
@@ -161,10 +132,9 @@ public class GHFontFamily : IDisposable
         }
     }
 
-    public Texture2D GetCharTexture(char character, GHFontProperties properties)
+    public Texture2D? GetCharTexture(char character, GHFontProperties properties)
     {
-        Texture2D? Texture = _fontTextures.GetTexture(character, properties);
-        if (Texture == null)
+        if (!_fontTextures.GetTexture(character, properties, out Texture2D? Texture))
         {
             Texture = LoadTexture(character, properties);
             _fontTextures.SetTexture(Texture, character, properties);

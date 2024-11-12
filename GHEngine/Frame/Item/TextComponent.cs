@@ -12,7 +12,7 @@ namespace GHEngine.Frame.Item;
 public class TextComponent : IColorMaskable
 {
     // Fields.
-    public bool IsVisible { get; set; }
+    public bool IsVisible { get; set; } = true;
 
     public string Text
     {
@@ -41,7 +41,7 @@ public class TextComponent : IColorMaskable
         get => _fontSize;
         set
         {
-            _fontSize = value;
+            _fontSize = float.IsNaN(value) ? 0f : Math.Max(0f, value);
             _cachedDrawSize = null;
             FontSizeChange?.Invoke(this, new(this));
         }
@@ -90,7 +90,6 @@ public class TextComponent : IColorMaskable
         }
     }
 
-
     public bool IsItalic
     {
         get => _isItalic;
@@ -111,7 +110,7 @@ public class TextComponent : IColorMaskable
         {
             if (_lineSpacing != value)
             {
-                _lineSpacing = value;
+                _lineSpacing = float.IsNaN(value) ? 0f : value;
                 FontChange?.Invoke(this, new(this));
             }
         }
@@ -124,11 +123,13 @@ public class TextComponent : IColorMaskable
         {
             if (_charSpacing != value)
             {
-                _charSpacing = value;
+                _charSpacing = float.IsNaN(value) ? 0f : value;
                 FontChange?.Invoke(this, new(this));
             }
         }
     }
+
+    public SamplerState? CustomSamplerState { get; set; } = null;
 
     public event EventHandler<TextComponentArgs>? TextChange;
     public event EventHandler<TextComponentArgs>? FontChange;
@@ -158,6 +159,23 @@ public class TextComponent : IColorMaskable
     {
         FontFamily = font;
         Text = text;
+    }
+
+    public TextComponent(TextComponent component)
+    {
+        ArgumentNullException.ThrowIfNull(component, nameof(component));
+
+        FontFamily = component.FontFamily;
+        FontSize = component.FontSize;
+        Text = component.Text;
+        Mask = component.Mask;
+        Brightness = component.Brightness;
+        Opacity = component.Opacity;
+        LineSpacing = component.LineSpacing;
+        CharSpacing = component.CharSpacing;
+        IsBold = component.IsBold;
+        IsItalic = component.IsItalic;
+        IsVisible = component.IsVisible;
     }
 
 

@@ -16,26 +16,30 @@ public class FontTextureCollection
 
 
     // Private fields.
-    private readonly Dictionary<GHFontProperties, Dictionary<char, Texture2D>> _textures = new();
+    private readonly Dictionary<GHFontProperties, Dictionary<char, Texture2D?>> _textures = new();
     private readonly Queue<GHFontProperties> _fontsByAge = new();
 
 
     // Methods.
-    public void SetTexture(Texture2D texture, char character, GHFontProperties properties)
+    public void SetTexture(Texture2D? texture, char character, GHFontProperties properties)
     {
-        Dictionary<char, Texture2D> TextureDict = GetTextureDictionary(properties);
+        Dictionary<char, Texture2D?> TextureDict = GetTextureDictionary(properties);
 
         TextureDict[character] = texture;
     }
 
-    public Texture2D? GetTexture(char character, GHFontProperties properties)
+    public bool GetTexture(char character, GHFontProperties properties, out Texture2D? texture)
     {
-        if (_textures.TryGetValue(properties, out var TextureDict))
+        texture = null;
+        if (!_textures.TryGetValue(properties, out var TextureDict))
         {
-            TextureDict.TryGetValue(character, out var Texture);
-            return Texture;
+            return false;
         }
-        return null;
+        if (TextureDict.TryGetValue(character, out texture))
+        {
+            return true;
+        }
+        return false;
     }
 
     public void ClearTexture(char character, GHFontProperties properties)
@@ -67,9 +71,9 @@ public class FontTextureCollection
 
 
     // Private methods.
-    private Dictionary<char, Texture2D> GetTextureDictionary(GHFontProperties properties)
+    private Dictionary<char, Texture2D?> GetTextureDictionary(GHFontProperties properties)
     {
-        _textures.TryGetValue(properties, out Dictionary<char, Texture2D>? TextureDict);
+        _textures.TryGetValue(properties, out var TextureDict);
         if (TextureDict != null)
         {
             return TextureDict;

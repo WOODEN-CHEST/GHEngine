@@ -23,10 +23,10 @@
     <Compile Remove="Frame\Item\PropertyAnimation.cs" />
     <Compile Remove="Frame\Item\PropertyAnimManager.cs" />
     <Compile Remove="Frame\Item\PropertyKeyframe.cs" />
-    <Compile Remove="Frame\Item\TextAlignOption.cs" />
     <Compile Remove="Frame\Item\TextBox.cs" />
     <Compile Remove="Frame\Item\TextComponent.cs" />
     <Compile Remove="Frame\Item\TextComponentArgs.cs" />
+    <Compile Remove="Frame\Item\TextFitMethod.cs" />
   </ItemGroup>
 
   <ItemGroup>

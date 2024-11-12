@@ -13,7 +13,7 @@ public interface IRenderer : IDisposable
     // Methods.
     public void DrawSprite(Texture2D texture,
         Vector2 position,
-        Rectangle? sourceArea,
+        RectangleF? sourceArea,
         Color mask,
         float rotation,
         Vector2 origin,
@@ -25,6 +25,7 @@ public interface IRenderer : IDisposable
     public void DrawString(FontRenderProperties properties,
         string text,
         Vector2 position,
+        RectangleF? sourceArea,
         Color mask,
         float rotation,
         Vector2 origin,
