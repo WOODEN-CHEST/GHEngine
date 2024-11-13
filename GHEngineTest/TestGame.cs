@@ -62,12 +62,19 @@ public class TestGame : Game
 
         GHFontFamily FontFamily = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font")!;
 
-        //TextBox Text = new();
-        //Text.Add(new TextComponent(, "Hello World"!));
+        //TextBox Text = new()
+        //{
+        //    new TextComponent(FontFamily, "Hello World")
+        //    {
+        //        FontSize = 0.25f,
+        //        Mask = Color.Red,
+        //    }
+        //};
+        //Text.Origin = new(0.5f);
+        //Text.Position = new(0.5f);
 
-        ISpriteAnimation Animation = Provider.GetAsset<ISpriteAnimation>(_mainFrame, AssetType.Animation, "image")!;
         //_mainFrame.Layers[0].AddItem(Text);
-        _mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily, Anim = Animation.CreateInstance() });
+        _mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily });
     }
 
     protected override void BeginRun()
@@ -102,28 +109,16 @@ public class TestGame : Game
 
     private class TestBox : IRenderableItem
     {
-        public required IAnimationInstance Anim { get; init; }
         public required GHFontFamily Family { get; init; }
         public bool IsVisible { get; set; } = true;
         float Rotation;
-
         public void Render(IRenderer renderer, IProgramTime time)
         {
             float SinValue = MathF.Sin((float)time.TotalTime.TotalSeconds);
             Rotation += (float)time.PassedTime.TotalSeconds;
 
-            string TextDouble = "Hello World\nHello World 2";
-            //string Text = "Hello World 1";
-            //renderer.DrawRectangle(Color.Red, new Vector2(0.5f, 0f), new Vector2(0.5f + 0.5f * SinValue, 1f),
-            //    Vector2.Zero, 0f, null, null);
-
-            renderer.DrawString(new(Family, false, false, 0f, 0f), TextDouble, new(0.3f, 0.3f), new RectangleF(0.2f, 0.2f, 0.8f, 0.8f),
-                Color.White, Rotation, new(0.5f, 0.5f), new Vector2(0.4f, 0.4f), SpriteEffects.None, null, null, null);
-
-            //renderer.DrawSprite(Anim.CurrentFrame, new Vector2(0.5f, 0.5f), new RectangleF(0.3f, 0.3f, 0.5f, 0.5f),
-            //    Color.White, Rotation, new Vector2(1.0f, 1.0f),
-            //    new Vector2(0.5f, 0.5f), SpriteEffects.None, null, null);
-
+            renderer.DrawString(new(Family, false, false, 0f, 0f), "Hello World!", Vector2.Zero, null, Color.Wheat,
+                MathF.PI / 8f, new Vector2(0.5f), Vector2.One, SpriteEffects.None, null, null, null);
         }
     }
 }

@@ -300,6 +300,10 @@ public class GHRenderer : IFrameRenderer
 
             (Rectangle? CharDrawBounds, Vector2 BoundsOffset) = GetCharDrawBounds(bounds, position,
                 RelativeTextPositionInScreen, new Vector2(CharTexture.Width, CharTexture.Height), size, TextureScaling);
+            if (CharDrawBounds.HasValue && (CharDrawBounds.Value.Width == 0 || CharDrawBounds.Value.Height == 0))
+            {
+                continue;
+            }
             Vector2 ToOriginVectorRelative = (position + origin * size) - RelativeTextPositionInScreen;
             Vector2 ToOriginVectorWindowAbsolute = ToOriginVectorRelative * (Vector2)_display.WindowedSize - BoundsOffset;
             Vector2 ToOriginVectorSpriteAbsolute = ToOriginVectorWindowAbsolute / new Vector2(TextureScaling.X, TextureScaling.Y);

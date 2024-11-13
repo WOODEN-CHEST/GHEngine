@@ -36,7 +36,7 @@ public class TextComponent : IColorMaskable
         }
     }
 
-    internal float FontSize
+    public float FontSize
     {
         get => _fontSize;
         set
@@ -65,13 +65,13 @@ public class TextComponent : IColorMaskable
         set => _colorMask.Mask = value;
     }
 
-    public Vector2 RelativeDrawSize
+    public Vector2 DrawSize
     {
         get
         {
             if (_cachedDrawSize == null)
             {
-                _cachedDrawSize = CalculateRelativeDrawSize(Text);
+                _cachedDrawSize = CalculateDrawSize(Text);
             }
             return _cachedDrawSize.Value;
         }
@@ -138,7 +138,7 @@ public class TextComponent : IColorMaskable
 
     // Private fields.
     private GHFontFamily _font;
-    private GenericColorMask _colorMask;
+    private GenericColorMask _colorMask = new();
     private string _text = string.Empty;
     private Vector2? _cachedDrawSize = null;
     private float _fontSize = 1f;
@@ -180,9 +180,9 @@ public class TextComponent : IColorMaskable
 
 
     // Methods.
-    public Vector2 CalculateRelativeDrawSize(string text)
+    public Vector2 CalculateDrawSize(string text)
     {
         GHFontProperties Properties = new(1f, IsBold, IsItalic, LineSpacing, CharSpacing);
-        return FontFamily.MeasureRelativeSize(Text, Properties);
+        return FontFamily.MeasureRelativeSize(Text, Properties) * FontSize;
     }
 }

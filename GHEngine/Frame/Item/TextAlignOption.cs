@@ -10,6 +10,5 @@ public enum TextAlignOption
 {
     Left,
     Center,
-    Right,
-    Justified
+    Right
 }
