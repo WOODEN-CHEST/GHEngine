@@ -22,6 +22,7 @@ public class TestGame : Game
     private IFrameRenderer _renderer;
     private IGameFrame _mainFrame;
     private readonly IModifiableProgramTime _time = new GenericProgramTime();
+    private readonly HashSet<ITimeUpdatable> _updatables = new();
 
 
     // Constructors.
@@ -49,7 +50,8 @@ public class TestGame : Game
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
         {
             new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false),
-            new GHFontDefinition("font", AssetPath.File("font"))
+            new GHFontDefinition("font1", AssetPath.File("font1")),
+            new GHFontDefinition("font2", AssetPath.File("font2"))
         };
 
         GHGenericAssetLoader GenericLoader = new();
@@ -60,21 +62,27 @@ public class TestGame : Game
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
 
-        GHFontFamily FontFamily = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font")!;
+        GHFontFamily FontFamily1 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font1")!;
+        GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
 
-        //TextBox Text = new()
-        //{
-        //    new TextComponent(FontFamily, "Hello World")
-        //    {
-        //        FontSize = 0.25f,
-        //        Mask = Color.Red,
-        //    }
-        //};
-        //Text.Origin = new(0.5f);
-        //Text.Position = new(0.5f);
+        WritableTextBox Text = new(_userInput)
+        {
+            new TextComponent(FontFamily1, "Hello World 1")
+            {
+                FontSize = 0.25f,
+                Mask = Color.Red,
+            },
+        };
+        Text.IsFocused = true;
+        Text.Origin = new(0.0f);
+        Text.Position = new(0.5f);
+        Text.Rotation = 0f;
+        Text.Alignment = TextAlignOption.Left;
+        Text.IsTypingEnabled = true;
 
-        //_mainFrame.Layers[0].AddItem(Text);
-        _mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily });
+        _mainFrame.Layers[0].AddItem(Text);
+        _updatables.Add(Text);        
+        //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
     }
 
     protected override void BeginRun()
@@ -95,15 +103,16 @@ public class TestGame : Game
         _time.TotalTime += gameTime.ElapsedGameTime;
         _userInput.RefreshInput();
 
-        if (_userInput.WereMouseButtonsJustReleased(MouseButton.Middle))
+        foreach (ITimeUpdatable Updatable in _updatables)
         {
-            Exit();
+            Updatable.Update(_time);
         }
     }
 
     protected override void Draw(GameTime gameTime)
     {
         _renderer.RenderFrame(_mainFrame, _time);
+        //((TextBox)_mainFrame.TopLayer!.Items[0]).Rotation = (float)gameTime.TotalGameTime.TotalSeconds;
         base.Draw(gameTime);
     }
 
@@ -117,8 +126,8 @@ public class TestGame : Game
             float SinValue = MathF.Sin((float)time.TotalTime.TotalSeconds);
             Rotation += (float)time.PassedTime.TotalSeconds;
 
-            renderer.DrawString(new(Family, false, false, 0f, 0f), "Hello World!", Vector2.Zero, null, Color.Wheat,
-                MathF.PI / 8f, new Vector2(0.5f), Vector2.One, SpriteEffects.None, null, null, null);
+            renderer.DrawString(new(Family, false, false, 0f, 0f), "Hello World!", new Vector2(0.5f), null,
+                Color.Wheat, Rotation, new Vector2(0.5f), new(0.25f), SpriteEffects.None, null, null, null);
         }
     }
 }

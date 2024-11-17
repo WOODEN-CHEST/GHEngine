@@ -19,6 +19,15 @@ public class GHRenderer : IFrameRenderer
     public float AspectRatio => _aspectRatio;
     public Color? ScreenColor { get; set; } = Color.Black;
 
+    public int DrawCallsTotal => DrawCallsSprite + DrawCallsCharacter + DrawCallsLine + DrawCallsRectangle;
+    public int DrawCallsSprite { get; private set; }
+    public int DrawCallsString { get; private set; }
+    public int DrawCallsCharacter { get; private set; }
+    public int DrawCallsLine { get; private set; }
+    public int DrawCallsRectangle { get; private set; }
+    public int RenderTargetSwitchCount { get; private set; }
+    public int SpriteBatchBeginCount { get; private set; }
+
 
     // Private fields.
     private readonly GraphicsDevice _graphicsDevice;
@@ -93,6 +102,7 @@ public class GHRenderer : IFrameRenderer
             layer.Effects,
             LAYER_DEPTH);
         _spriteBatch.End();
+        RenderTargetSwitchCount++;
     }
 
     private void RenderFrameOnScreen(IGameFrame frame)
@@ -116,6 +126,7 @@ public class GHRenderer : IFrameRenderer
         frame.Effects,
             LAYER_DEPTH);
         _spriteBatch.End();
+        RenderTargetSwitchCount++;
     }
 
     private void OnDisplayChangeEvent(object? sender, ScreenSizeChangeEventArgs args)
@@ -138,9 +149,11 @@ public class GHRenderer : IFrameRenderer
 
     private void BeginSpriteBatch(SpriteEffect? shader, SamplerState? sampler)
     {
+        SpriteBatchBeginCount++;
         _currentShader = shader;
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, sampler ?? _defaultSamplerState,
-            DepthStencilState.None, RasterizerState.CullCounterClockwise, shader, null);
+        _currentState = sampler ?? _defaultSamplerState;
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, _currentState,
+            DepthStencilState.None, RasterizerState.CullCounterClockwise, _currentShader, null);
     }
 
     private void EnsurePropertiesForDrawCall(SpriteEffect? shader, SamplerState? sampler)
@@ -179,27 +192,39 @@ public class GHRenderer : IFrameRenderer
         Vector2 relativeCharPosition,
         Vector2 charTextureSize,
         Vector2 size,
-        Vector2 textureScaling)
+        Vector2 textureScaling,
+        Vector2 origin)
     {
         if (fullDrawBounds == null)
         {
             return (null, Vector2.Zero);
         }
 
-        float MinX = Math.Max(0f, fullDrawBounds.Value.X * size.X + position.X - relativeCharPosition.X)
-            * _display.WindowedSize.X / textureScaling.X;
-        float MinY = Math.Max(0f, fullDrawBounds.Value.Y * size.Y + position.Y - relativeCharPosition.Y)
-            * _display.WindowedSize.Y / textureScaling.Y;
-        float MaxX = Math.Max(0f, fullDrawBounds.Value.Height * size.X + position.X - relativeCharPosition.X)
-            * _display.WindowedSize.X / textureScaling.X;
-        float MaxY = Math.Max(0f, fullDrawBounds.Value.Width * size.Y + position.Y - relativeCharPosition.Y)
-            * _display.WindowedSize.Y / textureScaling.Y;
+        float MinX = Math.Max(0f, fullDrawBounds.Value.X * size.X + position.X - relativeCharPosition.X
+            - (origin.X * size.X)) * _display.WindowedSize.X / textureScaling.X;
+        float MinY = Math.Max(0f, fullDrawBounds.Value.Y * size.Y + position.Y - relativeCharPosition.Y
+            - (origin.Y * size.Y)) * _display.WindowedSize.Y / textureScaling.Y;
+        float MaxX = Math.Max(0f, fullDrawBounds.Value.Width * size.X + position.X - relativeCharPosition.X
+            - (origin.X * size.X)) * _display.WindowedSize.X / textureScaling.X;
+        float MaxY = Math.Max(0f, fullDrawBounds.Value.Height * size.Y + position.Y - relativeCharPosition.Y
+            - (origin.Y * size.Y))  * _display.WindowedSize.Y / textureScaling.Y;
 
         float Width = Math.Max(Math.Min(MaxX - MinX, charTextureSize.X - MinX), 0f);
         float Height = Math.Max(Math.Min(MaxY - MinY, charTextureSize.Y- MinY), 0f);
 
         return (new Rectangle((int)MinX, (int)MinY, (int)Width, (int)Height),  
-            new Vector2(MinX, MinY));
+            new Vector2(MinX * textureScaling.X, MinY * textureScaling.Y));
+    }
+
+    private void ResetStatistics()
+    {
+        DrawCallsSprite = 0;
+        DrawCallsString = 0;
+        DrawCallsCharacter = 0;
+        DrawCallsLine = 0;
+        DrawCallsRectangle = 0;
+        RenderTargetSwitchCount = 0;
+        SpriteBatchBeginCount = 0;
     }
 
 
@@ -227,6 +252,7 @@ public class GHRenderer : IFrameRenderer
             ToWindowScale(new(texture.Width, texture.Height), size),
             effects, 
             LAYER_DEPTH);
+        DrawCallsSprite++;
     }
 
     public void DrawLine(Color color, 
@@ -249,6 +275,7 @@ public class GHRenderer : IFrameRenderer
             width * Math.Min(_display.WindowedSize.X, _display.WindowedSize.Y)),
             SpriteEffects.None,
             LAYER_DEPTH);
+        DrawCallsLine++;
     }
 
     public void DrawString(FontRenderProperties properties,
@@ -280,14 +307,14 @@ public class GHRenderer : IFrameRenderer
         GHFontProperties FontProperties = new(AbsoluteFontSize,  properties.IsBold,
             properties.IsItalic, properties.LineSpacing, properties.CharSpacing);
 
-        Vector2 RelativeTextPositionInScreen = position;
+        Vector2 RelativeCharPositionInScreen = position - (origin * size);
         for (int i = 0; i < text.Length; i++)
         {
             char Character = text[i];
 
             if (Character == '\n')
             {
-                RelativeTextPositionInScreen = new(position.X, RelativeTextPositionInScreen.Y
+                RelativeCharPositionInScreen = new(position.X, RelativeCharPositionInScreen.Y
                     + (size.Y * (properties.LineSpacing + 1f) / RelativeSize.Y));
                 continue;
             }
@@ -299,17 +326,17 @@ public class GHRenderer : IFrameRenderer
             }
 
             (Rectangle? CharDrawBounds, Vector2 BoundsOffset) = GetCharDrawBounds(bounds, position,
-                RelativeTextPositionInScreen, new Vector2(CharTexture.Width, CharTexture.Height), size, TextureScaling);
+                RelativeCharPositionInScreen, new Vector2(CharTexture.Width, CharTexture.Height), size, TextureScaling, origin);
             if (CharDrawBounds.HasValue && (CharDrawBounds.Value.Width == 0 || CharDrawBounds.Value.Height == 0))
             {
                 continue;
             }
-            Vector2 ToOriginVectorRelative = (position + origin * size) - RelativeTextPositionInScreen;
+            Vector2 ToOriginVectorRelative = position - RelativeCharPositionInScreen;
             Vector2 ToOriginVectorWindowAbsolute = ToOriginVectorRelative * (Vector2)_display.WindowedSize - BoundsOffset;
             Vector2 ToOriginVectorSpriteAbsolute = ToOriginVectorWindowAbsolute / new Vector2(TextureScaling.X, TextureScaling.Y);
 
             _spriteBatch.Draw(CharTexture,
-                ToWindowPosition(RelativeTextPositionInScreen) + ToOriginVectorWindowAbsolute + BoundsOffset,
+                ToWindowPosition(RelativeCharPositionInScreen) + BoundsOffset + ToOriginVectorWindowAbsolute,
                 CharDrawBounds,
                 mask,
                 rotation,
@@ -317,10 +344,12 @@ public class GHRenderer : IFrameRenderer
                 TextureScaling,
                 effects,
                 LAYER_DEPTH);
+            DrawCallsCharacter++;
 
-            RelativeTextPositionInScreen.X += ((float)CharTexture.Width / (float)CharTexture.Height * ScalingPerUnit.X)
+            RelativeCharPositionInScreen.X += ((float)CharTexture.Width / (float)CharTexture.Height * ScalingPerUnit.X)
                 + (properties.CharSpacing * size.Y / RelativeSize.X);
         }
+        DrawCallsString++;
     }
 
 
@@ -348,6 +377,7 @@ public class GHRenderer : IFrameRenderer
             AbsoluteSize,
             SpriteEffects.None,
             LAYER_DEPTH);
+        DrawCallsRectangle++;
     }
 
     public void RenderFrame(IGameFrame frameToDraw, IProgramTime time)
@@ -368,6 +398,7 @@ public class GHRenderer : IFrameRenderer
                 continue;
             }
 
+            RenderTargetSwitchCount++;
             _graphicsDevice.SetRenderTarget(_layerRenderTarget);
             _graphicsDevice.Clear(Color.Transparent);
             BeginSpriteBatch(null, _defaultSamplerState);

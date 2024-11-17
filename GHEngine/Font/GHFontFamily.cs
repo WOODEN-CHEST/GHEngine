@@ -60,12 +60,10 @@ public class GHFontFamily : IDisposable
     {
         Font TargetFont = GetFont(properties);
         RichTextOptions TargetTextOptions = new(TargetFont);
-        TargetTextOptions.Origin = new(0f, 0f);
         FontRectangle DrawSize = TextMeasurer.MeasureAdvance(character.ToString(), TargetTextOptions);
 
-
-
-        using Image<Rgba32> FontImage = new((int)Math.Ceiling(DrawSize.Width), (int)Math.Ceiling(DrawSize.Height), new Rgba32(0u));
+        using Image<Rgba32> FontImage = new((int)Math.Ceiling(DrawSize.Width * 2), 
+            (int)Math.Ceiling(DrawSize.Height * 2), new Rgba32(0u));
         FontImage.Mutate(context => context.DrawText(TargetTextOptions, character.ToString(), SixLabors.ImageSharp.Color.White));
 
         Texture2D MonoGameTexture = new(_graphicsDevice, FontImage.Width, FontImage.Height, false, SurfaceFormat.Color);
