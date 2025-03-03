@@ -14,7 +14,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 {
     // Static fields.
     public static readonly TimeSpan CURSOR_BLINK_DELAY_DEFAULT = TimeSpan.FromSeconds(0.5f);
-    public static readonly TimeSpan NAVIGATION_DELAY_INITIAL_DEFAULT = TimeSpan.FromSeconds(0.7f);
+    public static readonly TimeSpan NAVIGATION_DELAY_INITIAL_DEFAULT = TimeSpan.FromSeconds(0.5f);
     public static readonly TimeSpan NAVIGATION_DELAY_REPEAT_DEFAULT = TimeSpan.FromSeconds(0.05f);
     public const float CURSOR_DEFAULT_RELATIVE_THICKNESS = 0.05f;
 
@@ -132,9 +132,9 @@ public class WritableTextBox : TextBox, ITimeUpdatable
                 Vector2 DrawPosition = GetDrawPosition(DrawLines, Line, Component);
                 Vector2 ComponentDrawSize = Component.CalculateDrawSize(Component.Text.Substring(0, _cursor.IndexMax - TextIndex));
                 _cursor.BlinkerRelativeDrawPositionMin = new Vector2(DrawPosition.X 
-                    + ComponentDrawSize.X, DrawPosition.Y);
+                    + ComponentDrawSize.X, DrawPosition.Y) - Position;
                 _cursor.BlinkerRelativeDrawPositionMax = new Vector2(DrawPosition.X
-                    + ComponentDrawSize.X, DrawPosition.Y + Component.FontSize);
+                    + ComponentDrawSize.X, DrawPosition.Y + Component.FontSize) - Position;
                 UpdateCursorTargets();
                 return;
             }
@@ -151,18 +151,19 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         return Color.White;
     }
 
-    private void SetSingleSelection(int index, int textLength, IEnumerable<TextComponent> components)
+    private void SetSingleSelection(int index)
     {
-        _cursor.IndexMin = Math.Clamp(index, 0, textLength);
+        _cursor.IndexMin = Math.Clamp(index, 0, Length);
         _cursor.IndexMax = _cursor.IndexMin;
 
         UpdateCursorTargets();
         InvalidateBlinkerCache();
+        ResetBlinkTimer();
     }
 
-    private void MoveSingleCursor(int steps, int textLength, IEnumerable<TextComponent> components)
+    private void MoveSingleCursor(int steps)
     {
-        SetSingleSelection(_cursor.IndexMax + steps, textLength, components);
+        SetSingleSelection(_cursor.IndexMax + steps);
     }
 
     private void UpdateCursorTargets()
@@ -209,11 +210,10 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         TextComponent TargetedComponent = _cursor.IndexTargetMax!.Component;
 
-        Vector2 MinPos = GHMath.GetWindowAdjustedVector(_cursor.BlinkerRelativeDrawPositionMin!.Value, renderer.AspectRatio);
-        Vector2 MaxPos = GHMath.GetWindowAdjustedVector(_cursor.BlinkerRelativeDrawPositionMax!.Value, renderer.AspectRatio);
-
-        MinPos = Vector2.Rotate(MinPos - Position, Rotation) + Position;
-        MaxPos = Vector2.Rotate(MaxPos - Position, Rotation) + Position;
+        Vector2 MinPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMin!.Value, Rotation)
+            + Position - (Origin / 2f * DrawSize);
+        Vector2 MaxPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMax!.Value, Rotation)
+            + Position - (Origin / 2f * DrawSize);
 
         renderer.DrawLine(
             GetCursorColor(TargetedComponent.Mask),
@@ -242,41 +242,57 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     }
 
     /* Navigation. */
-    private void NavigateToEdge(int direction, bool isEntireBoxEdge)
+    private void NavigateToEnd(bool isFullEnd)
     {
-        if (isEntireBoxEdge)
+        if (isFullEnd)
         {
-            SetSingleSelection(direction == 1 ? Length : 0, Text.Length, this);
+            SetSingleSelection(Length);
             return;
         }
 
-        for (int i = _cursor.IndexMax; (i <= Length) && (i >= 0); i += direction)
+        for (int i = _cursor.IndexMax; i < Length; i++)
         {
             if (Text[i] != '\n')
             {
                 continue;
             }
-
-            int NewIndex = i;
-            if ((direction == -1) && (i < Length - 1))
-            {
-                NewIndex += 1;
-            }
-            SetSingleSelection(NewIndex, Text.Length, this);
+            SetSingleSelection(i);
             return;
         }
+        SetSingleSelection(Length);
+    }
+
+    private void NavigateToStart(bool isFullStart)
+    {
+        if (isFullStart)
+        {
+            SetSingleSelection(0);
+            return;
+        }
+
+        for (int i = _cursor.IndexMax; i >= 0; i--)
+        {
+            if ((i >= Length) || (Text[i] != '\n'))
+            {
+                continue;
+            }
+
+            SetSingleSelection(i + 1);
+            return;
+        }
+        SetSingleSelection(0);
     }
 
     private bool NavigateKeyboardInstant()
     {
-        if (_userInput.AreKeysDown(Keys.End))
+        if (_userInput.WereKeysJustPressed(Keys.End))
         {
-            NavigateToEdge(1, _userInput.AreKeysDown(Keys.LeftControl));
+            NavigateToEnd(_userInput.AreKeysDown(Keys.LeftControl));
             return true;
         }
-        if (_userInput.AreKeysDown(Keys.Home))
+        if (_userInput.WereKeysJustPressed(Keys.Home))
         {
-            NavigateToEdge(-1, _userInput.AreKeysDown(Keys.LeftControl));
+            NavigateToStart(_userInput.AreKeysDown(Keys.LeftControl));
             return true;
         }
         return false;
@@ -289,12 +305,12 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         if (_userInput.AreKeysDown(Keys.Right))
         {
-            TargetAction = () => MoveSingleCursor(1, Text.Length, this);
+            TargetAction = () => MoveSingleCursor(1);
             WasNavigationAttempted = true;
         }
         if (_userInput.AreKeysDown(Keys.Left))
         {
-            TargetAction = () => MoveSingleCursor(-1, Text.Length, this);
+            TargetAction = () => MoveSingleCursor(-1);
             WasNavigationAttempted = true;
         }
 
@@ -317,7 +333,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         bool WasNavigationAttempted = NavigateKeyboardTimed(time);
         if (WasNavigationAttempted && (_navigationDelay <= 0d))
         {
-            ResetBlinkTimer();
             if (_navigationDelayType == NavigationDelayType.NoDelay)
             {
                 _navigationDelay = NavigationDelayInitial.TotalSeconds;
@@ -354,7 +369,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         Target.Component.Text = CombinedText;
 
-        MoveSingleCursor(1, Text.Length, this);
+        MoveSingleCursor(1);
         ResetBlinkTimer();
     }
 

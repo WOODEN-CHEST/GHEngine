@@ -4,6 +4,7 @@ using GHEngine.Audio;
 using GHEngine.Audio.Modifier;
 using GHEngine.Audio.Source;
 using Microsoft.Xna.Framework;
+using System.Runtime.InteropServices;
 
 namespace GHEngineTest;
 

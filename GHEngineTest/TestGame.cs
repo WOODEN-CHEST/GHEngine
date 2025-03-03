@@ -79,9 +79,11 @@ public class TestGame : Game
         Text.Rotation = 0f;
         Text.Alignment = TextAlignOption.Left;
         Text.IsTypingEnabled = true;
+        Text.Rotation = 0f;
+        Text.Origin = new(0.5f);
 
         _mainFrame.Layers[0].AddItem(Text);
-        _updatables.Add(Text);        
+        _updatables.Add(Text);
         //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
     }
 
