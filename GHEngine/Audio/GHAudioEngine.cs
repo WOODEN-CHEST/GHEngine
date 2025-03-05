@@ -57,12 +57,12 @@ public class GHAudioEngine : IAudioEngine
 
 
     // Constructors.
-    public GHAudioEngine(int targetAudioLatency)
+    public GHAudioEngine(int targetAudioLatencyMilis)
     {
-        AudioLatency = targetAudioLatency;
+        AudioLatency = targetAudioLatencyMilis;
         try
         {
-            _outputDevice = new(AudioClientShareMode.Shared, true, targetAudioLatency);
+            _outputDevice = new(AudioClientShareMode.Shared, true, targetAudioLatencyMilis);
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(_outputDevice.OutputWaveFormat.SampleRate,
                 _outputDevice.OutputWaveFormat.Channels);
             _soundBuffer = Array.Empty<float>();

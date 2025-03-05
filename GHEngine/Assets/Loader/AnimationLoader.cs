@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Memory;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -32,12 +33,8 @@ public class AnimationLoader : GHStreamAssetLoader
         {
             // Such a inefficient way to do it.g
             using Image<Rgba32> LoadedImage = Image.Load<Rgba32>(stream);
-
             Texture2D Texture = new Texture2D(_graphicsDevice, LoadedImage.Width, LoadedImage.Height, false, SurfaceFormat.Color);
-            IEnumerable<Rgba32> RgbaPixels = LoadedImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray());
-            Microsoft.Xna.Framework.Color[] MonoGamePixels = RgbaPixels.Select(
-                pixel => new Microsoft.Xna.Framework.Color(pixel.R, pixel.G, pixel.B, pixel.A)).ToArray();
-            Texture.SetData(MonoGamePixels);
+            Texture.SetData<Microsoft.Xna.Framework.Color>(ConvertImageToPixelArray(LoadedImage));
 
             return Texture;
         }
@@ -45,6 +42,23 @@ public class AnimationLoader : GHStreamAssetLoader
         {
             throw new AssetLoadException("Exception while loading image.", e);
         };
+    }
+
+    private Microsoft.Xna.Framework.Color[] ConvertImageToPixelArray(Image<Rgba32> image)
+    {
+        Microsoft.Xna.Framework.Color[] Pixels = new Microsoft.Xna.Framework.Color[image.Width * image.Height];
+
+        int PixelIndex = 0;
+        foreach (Memory<Rgba32> Memory in image.GetPixelMemoryGroup())
+        {
+            Span<Rgba32> PixelSpan = Memory.Span;
+            for (int i = 0; i < PixelSpan.Length; i++, PixelIndex++)
+            {
+                Rgba32 Pixel = PixelSpan[i];
+                Pixels[PixelIndex] = new Microsoft.Xna.Framework.Color(Pixel.R, Pixel.G, Pixel.B, Pixel.A);
+            }
+        }
+        return Pixels;
     }
 
     private string GetPathWithFileExtension(string modifiedPath)

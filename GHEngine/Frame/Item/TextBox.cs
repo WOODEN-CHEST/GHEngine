@@ -280,7 +280,6 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     protected virtual List<DrawLine> GetRawDrawLineList()
     {
         List<DrawLine> DrawLines = new();
-        Vector2 CurrentSize = Vector2.Zero;
         DrawLine CurrentLine = new();
 
         foreach (TextComponent Component in _components)
@@ -584,11 +583,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
     public override string ToString()
     {
-        if (_cachedText == null)
-        {
-            CacheText();
-        }
-        return _cachedText!;
+        return Text;
     }
 
 
@@ -598,6 +593,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         get => _components[index];
         set
         {
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
             OnComponentRemove(_components[index]);
             OnComponentAdd(value);
             _components[index] = value;

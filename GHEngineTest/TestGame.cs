@@ -2,6 +2,7 @@
 using GHEngine.Assets;
 using GHEngine.Assets.Def;
 using GHEngine.Assets.Loader;
+using GHEngine.Audio;
 using GHEngine.Frame;
 using GHEngine.Frame.Animation;
 using GHEngine.Frame.Item;
@@ -46,24 +47,31 @@ public class TestGame : Game
         _mainFrame = new GHGameFrame();
         _mainFrame.AddLayer(new GHLayer("0"));
 
-        IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"C:\Users\User\Desktop\test");
+        IAudioEngine AudioEngine = new GHAudioEngine(15);
+        AudioEngine.Start();
+
+        IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"/home/wooden_chest/Desktop/test");
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
         {
             new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false),
             new GHFontDefinition("font1", AssetPath.File("font1")),
-            new GHFontDefinition("font2", AssetPath.File("font2"))
+            new GHFontDefinition("font2", AssetPath.File("font2")),
+            new GHSoundDefinition("btfd", AssetPath.File("btfd"))
         };
 
         GHGenericAssetLoader GenericLoader = new();
         GenericLoader.SetTypeLoader(AssetType.Animation, new AnimationLoader(StreamOpener, GraphicsDevice));
         GenericLoader.SetTypeLoader(AssetType.Font, new FontLoader(StreamOpener, GraphicsDevice));
+        GenericLoader.SetTypeLoader(AssetType.Sound, new SoundLoader(StreamOpener, AudioEngine.WaveFormat));
         IAssetProvider Provider = new GHAssetProvider(GenericLoader, AssetDefinitions, null);
 
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
 
         GHFontFamily FontFamily1 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font1")!;
-        GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
+        //GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
+
+
 
         WritableTextBox Text = new(_userInput)
         {

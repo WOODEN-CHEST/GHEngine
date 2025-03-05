@@ -1,42 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Frame\Item\TextA\**" />
-    <Compile Remove="IO\DataFile\**" />
-    <EmbeddedResource Remove="Frame\Item\TextA\**" />
-    <EmbeddedResource Remove="IO\DataFile\**" />
-    <None Remove="Frame\Item\TextA\**" />
-    <None Remove="IO\DataFile\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Audio\Source\GHSoundInstanceOld.cs" />
-    <Compile Remove="Frame\Item\KeyframeCollection.cs" />
-    <Compile Remove="Frame\Item\PropertyAnimation.cs" />
-    <Compile Remove="Frame\Item\PropertyAnimManager.cs" />
-    <Compile Remove="Frame\Item\PropertyKeyframe.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105" />
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="SixLabors.Fonts" Version="2.0.6" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
+    <PackageReference Include="SixLabors.Fonts" Version="2.1.2" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="GHEngineJSON">
-      <HintPath>..\..\JSON\C#\CSharpWCJson\CSharpWCJson\bin\Release\net7.0\GHEngineJSON.dll</HintPath>
-    </Reference>
+    <Reference Include="GHDF_CSharp"></Reference>
+    <Reference Include="GHEngineJSON"></Reference>
   </ItemGroup>
 
 </Project>

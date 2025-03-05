@@ -13,14 +13,10 @@ namespace GHEngine.Frame.Item;
 public class WritableTextBox : TextBox, ITimeUpdatable
 {
     // Static fields.
-    public static readonly TimeSpan CURSOR_BLINK_DELAY_DEFAULT = TimeSpan.FromSeconds(0.5f);
-    public static readonly TimeSpan NAVIGATION_DELAY_INITIAL_DEFAULT = TimeSpan.FromSeconds(0.5f);
-    public static readonly TimeSpan NAVIGATION_DELAY_REPEAT_DEFAULT = TimeSpan.FromSeconds(0.05f);
+    public static readonly TimeSpan CURSOR_BLINK_DELAY_DEFAULT = TimeSpan.FromSeconds(0.5d);
+    public static readonly TimeSpan NAVIGATION_DELAY_INITIAL_DEFAULT = TimeSpan.FromSeconds(0.5d);
+    public static readonly TimeSpan NAVIGATION_DELAY_REPEAT_DEFAULT = TimeSpan.FromSeconds(0.05d);
     public const float CURSOR_DEFAULT_RELATIVE_THICKNESS = 0.05f;
-
-    public const int UNDO_OPERATIONS_MIN = 0;
-    public const int UNDO_OPERATIONS_MAX = 10_000;
-    public const int UNDO_OPERATIONS_DEFAULT = 100;
 
 
     // Fields.
@@ -80,11 +76,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     }
 
     public bool IsUndoingAllowed { get; set; } = true;
-    public int MaxSavedUndoOperations
-    {
-        get => _maxSavedUndoOperations;
-        set => _maxSavedUndoOperations = Math.Clamp(value, UNDO_OPERATIONS_MIN, UNDO_OPERATIONS_MAX);
-    }
     public bool IsSelectionMade => _cursor.IsSelectionMode;
     public bool IsTextInserted { get; set; } = false;
 
@@ -97,7 +88,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     private readonly IUserInput _userInput;
     private bool _isFocused = false;
     private TextCursor _cursor = new();
-    private int _maxSavedUndoOperations = UNDO_OPERATIONS_DEFAULT;
 
     private double _navigationDelay = 0d;
     private NavigationDelayType _navigationDelayType = NavigationDelayType.NoDelay;
@@ -197,8 +187,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     {
         _cursor.BlinkerTimer = 0d;
     }
-
-
 
     private void RenderBlinker(IRenderer renderer, IProgramTime time)
     {
@@ -301,25 +289,23 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     private bool NavigateKeyboardTimed(IProgramTime time)
     {
         Action? TargetAction = null;
-        bool WasNavigationAttempted = false;
 
         if (_userInput.AreKeysDown(Keys.Right))
         {
             TargetAction = () => MoveSingleCursor(1);
-            WasNavigationAttempted = true;
         }
         if (_userInput.AreKeysDown(Keys.Left))
         {
             TargetAction = () => MoveSingleCursor(-1);
-            WasNavigationAttempted = true;
         }
 
         if ((TargetAction != null) && (_navigationDelay <= 0d))
         {
             TargetAction.Invoke();
+            return true;
         }
 
-        return WasNavigationAttempted;
+        return false;
     }
 
     private void NavigateKeyboard(IProgramTime time)
@@ -353,7 +339,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
     private void TypeCharacter(char character)
     {
-        if (_cursor.IndexTargetMin == null)
+        if (_cursor.IndexTargetMax == null)
         {
             UpdateCursorTargets();
         }
@@ -379,10 +365,8 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         {
             RemoveSelection(_cursor.IndexMin, _cursor.IndexMax);
         }
-        else
-        {
-            TypeCharacter(character);
-        }
+        
+        TypeCharacter(character);
     }
 
 
