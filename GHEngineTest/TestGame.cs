@@ -3,6 +3,7 @@ using GHEngine.Assets;
 using GHEngine.Assets.Def;
 using GHEngine.Assets.Loader;
 using GHEngine.Audio;
+using GHEngine.Audio.Source;
 using GHEngine.Frame;
 using GHEngine.Frame.Animation;
 using GHEngine.Frame.Item;
@@ -67,6 +68,11 @@ public class TestGame : Game
 
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
+
+        IPreSampledSoundInstance Sound = (IPreSampledSoundInstance)
+            Provider.GetAsset<IPreSampledSound>(_mainFrame, AssetType.Sound, "bftd").CreateInstance();
+
+        AudioEngine.AddSoundInstance(Sound);
 
         GHFontFamily FontFamily1 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font1")!;
         //GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
