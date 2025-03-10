@@ -16,10 +16,9 @@ public class RandomSequence<T> : IEnumerable<T?>
 
 
     // Constructors.
-    public RandomSequence(T[] items)
+    public RandomSequence(T?[] items)
     {
         SetItems(items);
-        Randomize();
     }
 
 
@@ -52,9 +51,10 @@ public class RandomSequence<T> : IEnumerable<T?>
         _index = 0;
     }
 
-    public void SetItems(T[] items)
+    public void SetItems(T?[] items)
     {
         _items = items ?? throw new ArgumentNullException(nameof(items));
+        Randomize();
     }
 
 
@@ -75,7 +75,7 @@ public class RandomSequence<T> : IEnumerable<T?>
 
 
     // Operators.
-    public T this[int index]
+    public T? this[int index]
     {
         get => _items[index];
         set => _items[index] = value;
