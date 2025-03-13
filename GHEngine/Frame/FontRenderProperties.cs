@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Frame;
 
-public record class FontRenderProperties(GHFontFamily FontFamily,
+public record FontRenderProperties(GHFontFamily FontFamily,
     bool IsBold,
     bool IsItalic,
     float LineSpacing,

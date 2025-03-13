@@ -70,7 +70,7 @@ public class TestGame : Game
         //GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
 
 
-        TextBox Text = new()
+        WritableTextBox Text = new(_userInput)
         {
             new TextComponent(FontFamily1, "Hello World!")
             {
@@ -78,19 +78,18 @@ public class TestGame : Game
                 Mask = Color.Red,
             },
         };
-        //Text.IsFocused = true;
+        Text.IsFocused = true;
         Text.Origin = new(0.0f);
         Text.Position = new(0.5f);
         Text.Rotation = 0f;
         Text.Alignment = TextAlignOption.Left;
-        //Text.IsTypingEnabled = true;
+        Text.IsTypingEnabled = true;
         Text.Rotation = 0f;
-        Text.Origin = new(0.5f);
 
         _textBox = Text;
 
         _mainFrame.Layers[0].AddItem(Text);
-        //_updatables.Add(Text);
+        _updatables.Add(Text);
         //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
     }
 

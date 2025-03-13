@@ -104,7 +104,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
     // Private methods.
     /* Cursor. */
-    private void UpdateBlinkerCache()
+    private void UpdateBlinkerRenderCache(float aspectRatio)
     {
         int TextIndex = 0;
         foreach (DrawLine Line in DrawLines)
@@ -120,10 +120,12 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
                 Vector2 DrawPosition = GetDrawPosition(DrawLines, Line, Component);
                 Vector2 ComponentDrawSize = Component.CalculateDrawSize(Component.Text.Substring(0, _cursor.IndexMax - TextIndex));
-                _cursor.BlinkerRelativeDrawPositionMin = new Vector2(DrawPosition.X 
-                    + ComponentDrawSize.X, DrawPosition.Y) - Position;
-                _cursor.BlinkerRelativeDrawPositionMax = new Vector2(DrawPosition.X
-                    + ComponentDrawSize.X, DrawPosition.Y + Component.FontSize) - Position;
+
+                Vector2 MaxPoint = GHMath.GetWindowAdjustedVector(new(ComponentDrawSize.X, 0f), aspectRatio);
+                float X = DrawPosition.X + GHMath.GetWindowAdjustedVector(new (ComponentDrawSize.X, 0f), aspectRatio).X;
+
+                _cursor.BlinkerRelativeDrawPositionMin = new Vector2(X, DrawPosition.Y);
+                _cursor.BlinkerRelativeDrawPositionMax = new Vector2(X, DrawPosition.Y + Component.FontSize);
                 UpdateCursorTargets();
                 return;
             }
@@ -192,15 +194,13 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         if ((_cursor.BlinkerRelativeDrawPositionMin == null) || (_cursor.BlinkerRelativeDrawPositionMax == null)
             || (_cursor.IndexTargetMin == null) || (_cursor.IndexTargetMax == null))
         {
-            UpdateBlinkerCache();
+            UpdateBlinkerRenderCache(renderer.AspectRatio);
         }
 
         TextComponent TargetedComponent = _cursor.IndexTargetMax!.Component;
 
-        Vector2 MinPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMin!.Value, Rotation)
-            + Position - (Origin / 2f * DrawSize);
-        Vector2 MaxPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMax!.Value, Rotation)
-            + Position - (Origin / 2f * DrawSize);
+        Vector2 MinPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMin!.Value, Rotation);
+        Vector2 MaxPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMax!.Value, Rotation);
 
         renderer.DrawLine(
             GetCursorColor(TargetedComponent.Mask),
