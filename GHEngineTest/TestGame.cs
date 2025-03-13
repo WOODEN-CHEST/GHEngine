@@ -72,7 +72,7 @@ public class TestGame : Game
 
         WritableTextBox Text = new(_userInput)
         {
-            new TextComponent(FontFamily1, "Hello World!")
+            new TextComponent(FontFamily1, "Hello World!\nHello World2")
             {
                 FontSize = 0.25f,
                 Mask = Color.Red,

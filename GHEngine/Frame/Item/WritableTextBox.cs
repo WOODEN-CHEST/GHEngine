@@ -127,7 +127,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             for (int i = 0; i < Line.Components.Count; i++)
             {
                 TextComponent Component = Line.Components[i];
-                if ((_cursor.IndexMax >= Component.Text.Length + TextIndex) && (i < Line.Components.Count - 1))
+                if ((_cursor.IndexMax >= Component.Text.Length + TextIndex) && (i < Line.Components.Count))
                 {
                     TextIndex += Component.Text.Length;
                     continue;
@@ -219,9 +219,14 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         Vector2 BlinkerPosMin = _cursor.BlinkerRelativeDrawPositionMin!.Value;
         Vector2 BlinkerPosMax = _cursor.BlinkerRelativeDrawPositionMax!.Value;
 
-        Vector2 MinPosFinal = Vector2.Rotate(BlinkerPosMin - Position, Rotation) + Position;
+        Vector2 MinPosFinal = Vector2.Rotate((BlinkerPosMin - Position) * new Vector2(renderer.AspectRatio, 1f), Rotation);
+        Vector2 MaxPosFinal = Vector2.Rotate((BlinkerPosMax - Position) * new Vector2(renderer.AspectRatio, 1f), Rotation);
 
-        Vector2 MaxPosFinal = Vector2.Rotate(BlinkerPosMax - Position, Rotation) + Position;
+        MaxPosFinal.X /= renderer.AspectRatio;
+        MinPosFinal.X /= renderer.AspectRatio;
+        
+        MaxPosFinal += Position;
+        MinPosFinal += Position;
 
         renderer.DrawLine(
             GetCursorColor(TargetedComponent.Mask),
@@ -337,7 +342,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         {
             return;
         }
-
         
         _navigationDelaySeconds = Math.Max(_navigationDelaySeconds - time.PassedTime.TotalSeconds, 0d);
         bool WasNavigationAttempted = WasNavigationAttempted = NavigateKeyboardTimed(time);
