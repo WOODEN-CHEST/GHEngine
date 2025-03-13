@@ -314,29 +314,37 @@ public class GHRenderer : IFrameRenderer
 
             if (Character == '\n')
             {
-                RelativeCharPositionInScreen = new(position.X, RelativeCharPositionInScreen.Y
-                    + (size.Y * (properties.LineSpacing + 1f) / RelativeSize.Y));
+                RelativeCharPositionInScreen = new(position.X,
+                    RelativeCharPositionInScreen.Y + (size.Y * (properties.LineSpacing + 1f) / RelativeSize.Y));
                 continue;
             }
 
-            Texture2D? CharTexture = properties.FontFamily.GetCharTexture(Character, FontProperties);
-            if (CharTexture == null)
+            GHCharacterTexture CharTexture = properties.FontFamily.GetCharTexture(Character, FontProperties);
+            if (CharTexture.Texture == null)
             {
+                RelativeCharPositionInScreen.X += CharTexture.RelativeAdvance * ScalingPerUnit.X;
                 continue;
             }
+
+            Vector2 FinalRelativeCharPositionInScreen = RelativeCharPositionInScreen
+                + (new Vector2(-CharTexture.OffsetFromLeftPixels, CharTexture.OffsetFromTopPixels)
+                / new Vector2(AbsoluteFontSize) * size);
 
             (Rectangle? CharDrawBounds, Vector2 BoundsOffset) = GetCharDrawBounds(bounds, position,
-                RelativeCharPositionInScreen, new Vector2(CharTexture.Width, CharTexture.Height), size, TextureScaling, origin);
+                FinalRelativeCharPositionInScreen, new Vector2(CharTexture.Texture.Width, CharTexture.Texture.Height), 
+                size, TextureScaling, origin);
+
             if (CharDrawBounds.HasValue && (CharDrawBounds.Value.Width == 0 || CharDrawBounds.Value.Height == 0))
             {
                 continue;
             }
-            Vector2 ToOriginVectorRelative = position - RelativeCharPositionInScreen;
+            Vector2 ToOriginVectorRelative = position - FinalRelativeCharPositionInScreen;
             Vector2 ToOriginVectorWindowAbsolute = ToOriginVectorRelative * (Vector2)_display.WindowedSize - BoundsOffset;
             Vector2 ToOriginVectorSpriteAbsolute = ToOriginVectorWindowAbsolute / new Vector2(TextureScaling.X, TextureScaling.Y);
 
-            _spriteBatch.Draw(CharTexture,
-                ToWindowPosition(RelativeCharPositionInScreen) + BoundsOffset + ToOriginVectorWindowAbsolute,
+            _spriteBatch.Draw(CharTexture.Texture,
+                ToWindowPosition(FinalRelativeCharPositionInScreen) + BoundsOffset
+                + ToOriginVectorWindowAbsolute,
                 CharDrawBounds,
                 mask,
                 rotation,
@@ -346,8 +354,7 @@ public class GHRenderer : IFrameRenderer
                 LAYER_DEPTH);
             DrawCallsCharacter++;
 
-            RelativeCharPositionInScreen.X += ((float)CharTexture.Width / (float)CharTexture.Height * ScalingPerUnit.X)
-                + (properties.CharSpacing * size.Y / RelativeSize.X);
+            RelativeCharPositionInScreen.X += CharTexture.RelativeAdvance * ScalingPerUnit.X;
         }
         DrawCallsString++;
     }
@@ -382,6 +389,8 @@ public class GHRenderer : IFrameRenderer
 
     public void RenderFrame(IGameFrame frameToDraw, IProgramTime time)
     {
+        ResetStatistics();
+
         if (frameToDraw.LayerCount == 0)
         {
             _graphicsDevice.SetRenderTarget(null);

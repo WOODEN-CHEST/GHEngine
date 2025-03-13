@@ -6,4 +6,4 @@ using System.Threading.Tasks;
 
 namespace GHEngine.GameFont;
 
-public record class GHFontProperties(float Size, bool IsBold, bool IsItalic, float LineSpacing, float CharSpacing) { }
+public record GHFontProperties(float Size, bool IsBold, bool IsItalic, float LineSpacing, float CharSpacing);

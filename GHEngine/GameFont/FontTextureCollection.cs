@@ -16,19 +16,19 @@ public class FontTextureCollection
 
 
     // Private fields.
-    private readonly Dictionary<GHFontProperties, Dictionary<char, Texture2D?>> _textures = new();
+    private readonly Dictionary<GHFontProperties, Dictionary<char, GHCharacterTexture>> _textures = new();
     private readonly Queue<GHFontProperties> _fontsByAge = new();
 
 
     // Methods.
-    public void SetTexture(Texture2D? texture, char character, GHFontProperties properties)
+    public void SetTexture(GHCharacterTexture texture, char character, GHFontProperties properties)
     {
-        Dictionary<char, Texture2D?> TextureDict = GetTextureDictionary(properties);
+        Dictionary<char, GHCharacterTexture> TextureDict = GetTextureDictionary(properties);
 
         TextureDict[character] = texture;
     }
 
-    public bool GetTexture(char character, GHFontProperties properties, out Texture2D? texture)
+    public bool GetTexture(char character, GHFontProperties properties, out GHCharacterTexture? texture)
     {
         texture = null;
         if (!_textures.TryGetValue(properties, out var TextureDict))
@@ -60,18 +60,18 @@ public class FontTextureCollection
         _textures.Remove(properties);
     }
 
-    public IEnumerable<Texture2D> GetTexturesOfFont(GHFontProperties properties)
+    public IEnumerable<GHCharacterTexture> GetTexturesOfFont(GHFontProperties properties)
     {
         if (_textures.TryGetValue(properties, out var TextureDict))
         {
             return TextureDict.Values;
         }
-        return Enumerable.Empty<Texture2D>();
+        return Enumerable.Empty<GHCharacterTexture>();
     }
 
 
     // Private methods.
-    private Dictionary<char, Texture2D?> GetTextureDictionary(GHFontProperties properties)
+    private Dictionary<char, GHCharacterTexture> GetTextureDictionary(GHFontProperties properties)
     {
         _textures.TryGetValue(properties, out var TextureDict);
         if (TextureDict != null)

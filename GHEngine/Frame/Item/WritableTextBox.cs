@@ -75,7 +75,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         set => _cursor.CursorRelativeThickness = value;
     }
 
-    public bool IsUndoingAllowed { get; set; } = true;
     public bool IsSelectionMade => _cursor.IsSelectionMode;
     public bool IsTextInserted { get; set; } = false;
 
@@ -89,7 +88,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     private bool _isFocused = false;
     private TextCursor _cursor = new();
 
-    private double _navigationDelay = 0d;
+    private double _navigationDelaySeconds = 0d;
     private NavigationDelayType _navigationDelayType = NavigationDelayType.NoDelay;
 
 
@@ -299,9 +298,12 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             TargetAction = () => MoveSingleCursor(-1);
         }
 
-        if ((TargetAction != null) && (_navigationDelay <= 0d))
+        if (TargetAction != null)
         {
-            TargetAction.Invoke();
+            if (_navigationDelaySeconds <= 0d)
+            {
+                TargetAction.Invoke();
+            }
             return true;
         }
 
@@ -315,25 +317,27 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             return;
         }
 
-        _navigationDelay = Math.Max(_navigationDelay - time.PassedTime.TotalSeconds, 0d);
-        bool WasNavigationAttempted = NavigateKeyboardTimed(time);
-        if (WasNavigationAttempted && (_navigationDelay <= 0d))
+        
+        _navigationDelaySeconds = Math.Max(_navigationDelaySeconds - time.PassedTime.TotalSeconds, 0d);
+        bool WasNavigationAttempted = WasNavigationAttempted = NavigateKeyboardTimed(time);
+
+        if (WasNavigationAttempted)
         {
             if (_navigationDelayType == NavigationDelayType.NoDelay)
             {
-                _navigationDelay = NavigationDelayInitial.TotalSeconds;
+                _navigationDelaySeconds = NavigationDelayInitial.TotalSeconds;
                 _navigationDelayType = NavigationDelayType.InitialDelay;
             }
-            else
+            else if (_navigationDelaySeconds <= 0d)
             {
-                _navigationDelay = NavigationDelayRepeat.TotalSeconds;
                 _navigationDelayType = NavigationDelayType.RepeatedDelay;
+                _navigationDelaySeconds = NavigationDelayRepeat.TotalSeconds;
             }
         }
-        else if (!WasNavigationAttempted)
+        else
         {
             _navigationDelayType = NavigationDelayType.NoDelay;
-            _navigationDelay = 0d;
+            _navigationDelaySeconds = 0d;
         }
     }
 
@@ -359,14 +363,26 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         ResetBlinkTimer();
     }
 
+    private void DeleteCharacter()
+    {
+
+    }
+
     private void ExecuteKeyPress(char character, Keys key)
     {
         if (IsSelectionMade)
         {
             RemoveSelection(_cursor.IndexMin, _cursor.IndexMax);
         }
-        
-        TypeCharacter(character);
+
+        if ((key == Keys.Back) || (key == Keys.Delete))
+        {
+            DeleteCharacter();
+        }
+        else
+        {
+            TypeCharacter(character);
+        }
     }
 
 

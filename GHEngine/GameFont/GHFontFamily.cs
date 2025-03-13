@@ -56,25 +56,97 @@ public class GHFontFamily : IDisposable
         return CreatedFont;
     }
 
-    private Texture2D? LoadTexture(char character, GHFontProperties properties)
+    private bool ContainsNonTransparentPixelInColumn(Image<Rgba32> image, int column)
+    {
+        for (int Row = 0; Row < image.Height; Row++)
+        {
+            if (image[column, Row].A > 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool ContainsNonTransparentPixelInRow(Image<Rgba32> image, int row)
+    {
+        for (int Column = 0; Column < image.Width; Column++)
+        {
+            if (image[Column, row].A > 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private (float OffsetX, float OffsetY) GetImageOffsets(Image<Rgba32> image, IntVector origin)
+    {
+        int OffsetX = origin.X;
+        int OffsetY = -origin.Y;
+
+        for (int Column = 0; Column < image.Width; Column++)
+        {
+            if (ContainsNonTransparentPixelInColumn(image, Column))
+            {
+                break;
+            }
+            else
+            {
+                OffsetX--;
+            }
+        }
+
+        for (int Row = 0; Row < image.Height; Row++)
+        {
+            if (ContainsNonTransparentPixelInRow(image, Row))
+            {
+                break;
+            }
+            else
+            {
+                OffsetY++;
+            }
+        }
+
+        return (OffsetX, OffsetY);
+    }
+
+    private GHCharacterTexture LoadTexture(char character, GHFontProperties properties)
     {
         Font TargetFont = GetFont(properties);
         RichTextOptions TargetTextOptions = new(TargetFont);
-        FontRectangle DrawSize = TextMeasurer.MeasureAdvance(character.ToString(), TargetTextOptions);
+        FontRectangle DrawBounds = TextMeasurer.MeasureSize(character.ToString(), TargetTextOptions);
+        FontRectangle AdvanceBounds = TextMeasurer.MeasureAdvance(character.ToString(), TargetTextOptions);
 
-        using Image<Rgba32> FontImage = new((int)Math.Ceiling(DrawSize.Width * 2), 
-            (int)Math.Ceiling(DrawSize.Height * 2), new Rgba32(0u));
-        FontImage.Mutate(context => context.DrawText(TargetTextOptions, character.ToString(), SixLabors.ImageSharp.Color.White));
+        if ((DrawBounds.Width <= 0f) || (DrawBounds.Height <= 0f))
+        {
+            return new GHCharacterTexture(null, 0f, 0f, AdvanceBounds.Width / AdvanceBounds.Height);
+        }
 
-        Texture2D MonoGameTexture = new(_graphicsDevice, FontImage.Width, FontImage.Height, false, SurfaceFormat.Color);
-        IEnumerable<Rgba32> Pixels = FontImage.GetPixelMemoryGroup().SelectMany(memory => memory.ToArray());
-        Microsoft.Xna.Framework.Color[] TextureData = Pixels.Select(
-            pixel => new Microsoft.Xna.Framework.Color(pixel.R, pixel.G, pixel.B, pixel.A)).ToArray();
-        MonoGameTexture.SetData(TextureData);
+        /* Garbage-ass algorithm used to generate image textures, but it works for MOST cases. */
+        using Image<Rgba32> FontImage = new(
+            (int)Math.Ceiling(DrawBounds.Width * 4f),
+            (int)Math.Ceiling(DrawBounds.Height * 4f),
+            new Rgba32(0u));
 
-        return MonoGameTexture;
+        TargetTextOptions.Origin = new System.Numerics.Vector2(FontImage.Width / 4, FontImage.Height / 4);
+
+        FontImage.Mutate(context =>
+        {
+            context.DrawText(TargetTextOptions, character.ToString(), SixLabors.ImageSharp.Color.White);
+        });
+
+        IntVector Origin = new((int)TargetTextOptions.Origin.X, (int)TargetTextOptions.Origin.Y);
+        (float OffsetX, float OffsetY) = GetImageOffsets(FontImage, Origin);
+        FontImage.Mutate(context => context.EntropyCrop());
+
+        return new(TextureUtilities.ConvertTexture(FontImage, _graphicsDevice),
+            OffsetY,
+            OffsetX,
+            AdvanceBounds.Width / AdvanceBounds.Height);
     }
-
 
     // Methods.
     public Vector2 MeasureAbsoluteSize(string text, GHFontProperties properties)
@@ -121,24 +193,24 @@ public class GHFontFamily : IDisposable
         for (int i = 0; i < _fontTextures.FontCount - fontsToRemain; i++)
         {
             GHFontProperties Properties = CurrentFonts[i];
-            foreach (Texture2D Texture in _fontTextures.GetTexturesOfFont(Properties))
+            foreach (GHCharacterTexture CharTexture in _fontTextures.GetTexturesOfFont(Properties))
             {
-                Texture.Dispose();
+                CharTexture.Texture?.Dispose();
             }
             _fontTextures.ClearTextures(Properties);
             _fonts.Remove(Properties);
         }
     }
 
-    public Texture2D? GetCharTexture(char character, GHFontProperties properties)
+    public GHCharacterTexture GetCharTexture(char character, GHFontProperties properties)
     {
-        if (!_fontTextures.GetTexture(character, properties, out Texture2D? Texture))
+        if (!_fontTextures.GetTexture(character, properties, out GHCharacterTexture? Texture))
         {
             Texture = LoadTexture(character, properties);
             _fontTextures.SetTexture(Texture, character, properties);
         }
 
-        return Texture;
+        return Texture!;
     }
 
     public void LoadFontCharacters(GHFontProperties properties, IEnumerable<char> characters)

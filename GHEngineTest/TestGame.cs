@@ -3,6 +3,7 @@ using GHEngine.Assets;
 using GHEngine.Assets.Def;
 using GHEngine.Assets.Loader;
 using GHEngine.Audio;
+using GHEngine.Audio.Source;
 using GHEngine.Frame;
 using GHEngine.Frame.Animation;
 using GHEngine.Frame.Item;
@@ -24,6 +25,7 @@ public class TestGame : Game
     private IGameFrame _mainFrame;
     private readonly IModifiableProgramTime _time = new GenericProgramTime();
     private readonly HashSet<ITimeUpdatable> _updatables = new();
+    private TextBox _textBox;
 
 
     // Constructors.
@@ -47,22 +49,18 @@ public class TestGame : Game
         _mainFrame = new GHGameFrame();
         _mainFrame.AddLayer(new GHLayer("0"));
 
-        IAudioEngine AudioEngine = new GHAudioEngine(15);
-        AudioEngine.Start();
-
-        IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"/home/wooden_chest/Desktop/test");
+        IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"C:\Users\User\Desktop\test");
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
         {
             new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false),
             new GHFontDefinition("font1", AssetPath.File("font1")),
             new GHFontDefinition("font2", AssetPath.File("font2")),
-            new GHSoundDefinition("btfd", AssetPath.File("btfd"))
+            new GHSoundDefinition("bftd", AssetPath.File("bftd"))
         };
 
         GHGenericAssetLoader GenericLoader = new();
         GenericLoader.SetTypeLoader(AssetType.Animation, new AnimationLoader(StreamOpener, GraphicsDevice));
         GenericLoader.SetTypeLoader(AssetType.Font, new FontLoader(StreamOpener, GraphicsDevice));
-        GenericLoader.SetTypeLoader(AssetType.Sound, new SoundLoader(StreamOpener, AudioEngine.WaveFormat));
         IAssetProvider Provider = new GHAssetProvider(GenericLoader, AssetDefinitions, null);
 
         _display.IsUserResizingAllowed = true;
@@ -72,26 +70,27 @@ public class TestGame : Game
         //GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
 
 
-
-        WritableTextBox Text = new(_userInput)
+        TextBox Text = new()
         {
-            new TextComponent(FontFamily1, "Hello World 1")
+            new TextComponent(FontFamily1, "Hellojjj World!")
             {
                 FontSize = 0.25f,
                 Mask = Color.Red,
             },
         };
-        Text.IsFocused = true;
+        //Text.IsFocused = true;
         Text.Origin = new(0.0f);
         Text.Position = new(0.5f);
         Text.Rotation = 0f;
         Text.Alignment = TextAlignOption.Left;
-        Text.IsTypingEnabled = true;
+        //Text.IsTypingEnabled = true;
         Text.Rotation = 0f;
         Text.Origin = new(0.5f);
 
+        _textBox = Text;
+
         _mainFrame.Layers[0].AddItem(Text);
-        _updatables.Add(Text);
+        //_updatables.Add(Text);
         //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
     }
 
@@ -112,6 +111,11 @@ public class TestGame : Game
         _time.PassedTime = gameTime.ElapsedGameTime;
         _time.TotalTime += gameTime.ElapsedGameTime;
         _userInput.RefreshInput();
+
+        //_textBox.Rotation += (float)_time.PassedTime.TotalSeconds;
+
+
+
 
         foreach (ITimeUpdatable Updatable in _updatables)
         {
