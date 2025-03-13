@@ -328,7 +328,7 @@ public class GHRenderer : IFrameRenderer
 
             Vector2 FinalRelativeCharPositionInScreen = RelativeCharPositionInScreen
                 + (new Vector2(-CharTexture.OffsetFromLeftPixels, CharTexture.OffsetFromTopPixels)
-                / new Vector2(AbsoluteFontSize) * size);
+                / new Vector2(AbsoluteFontSize) * ScalingPerUnit);
 
             (Rectangle? CharDrawBounds, Vector2 BoundsOffset) = GetCharDrawBounds(bounds, position,
                 FinalRelativeCharPositionInScreen, new Vector2(CharTexture.Texture.Width, CharTexture.Texture.Height), 

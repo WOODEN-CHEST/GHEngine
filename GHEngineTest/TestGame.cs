@@ -72,7 +72,7 @@ public class TestGame : Game
 
         TextBox Text = new()
         {
-            new TextComponent(FontFamily1, "Hellojjj World!")
+            new TextComponent(FontFamily1, "Hello World!")
             {
                 FontSize = 0.25f,
                 Mask = Color.Red,
