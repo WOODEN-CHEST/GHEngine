@@ -104,8 +104,23 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
     // Private methods.
     /* Cursor. */
-    private void UpdateBlinkerRenderCache(float aspectRatio)
+    private bool IsBlinkerCacheInvalid(float curAspectRatio)
     {
+        return (_cursor.BlinkerRelativeDrawPositionMin == null)
+            || (_cursor.BlinkerRelativeDrawPositionMax == null)
+            || (_cursor.IndexTargetMin == null)
+            || (_cursor.IndexTargetMax == null)
+            || (curAspectRatio != _cursor.BlinkerCacheAspectRatio);
+    }
+
+    private void EnsureBlinkerRenderCache(float aspectRatio)
+    {
+        if (!IsBlinkerCacheInvalid(aspectRatio))
+        {
+            return;
+        }
+
+        _cursor.BlinkerCacheAspectRatio = aspectRatio;
         int TextIndex = 0;
         foreach (DrawLine Line in DrawLines)
         {
@@ -120,12 +135,18 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
                 Vector2 DrawPosition = GetDrawPosition(DrawLines, Line, Component);
                 Vector2 ComponentDrawSize = Component.CalculateDrawSize(Component.Text.Substring(0, _cursor.IndexMax - TextIndex));
+                Vector2 OriginOffset = Origin * DrawSize;
 
-                Vector2 MaxPoint = GHMath.GetWindowAdjustedVector(new(ComponentDrawSize.X, 0f), aspectRatio);
-                float X = DrawPosition.X + GHMath.GetWindowAdjustedVector(new (ComponentDrawSize.X, 0f), aspectRatio).X;
+                Vector2 MinPoint = DrawPosition + GHMath.GetWindowAdjustedVector(
+                    new Vector2(ComponentDrawSize.X, 0f) - OriginOffset, aspectRatio);
 
-                _cursor.BlinkerRelativeDrawPositionMin = new Vector2(X, DrawPosition.Y);
-                _cursor.BlinkerRelativeDrawPositionMax = new Vector2(X, DrawPosition.Y + Component.FontSize);
+                Vector2 MaxPoint = MinPoint + GHMath.GetWindowAdjustedVector(new Vector2(0f, Component.DrawSize.Y), aspectRatio);
+
+                //Vector2 MaxPoint = DrawPosition + GHMath.GetWindowAdjustedVector(
+                //    new Vector2(ComponentDrawSize.X, Component.DrawSize.Y) - OriginOffset, aspectRatio);
+
+                _cursor.BlinkerRelativeDrawPositionMin = new Vector2(MinPoint.X, MinPoint.Y);
+                _cursor.BlinkerRelativeDrawPositionMax = new Vector2(MaxPoint.X, MaxPoint.Y);
                 UpdateCursorTargets();
                 return;
             }
@@ -191,21 +212,21 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
     private void RenderBlinker(IRenderer renderer, IProgramTime time)
     {
-        if ((_cursor.BlinkerRelativeDrawPositionMin == null) || (_cursor.BlinkerRelativeDrawPositionMax == null)
-            || (_cursor.IndexTargetMin == null) || (_cursor.IndexTargetMax == null))
-        {
-            UpdateBlinkerRenderCache(renderer.AspectRatio);
-        }
+        EnsureBlinkerRenderCache(renderer.AspectRatio);
 
         TextComponent TargetedComponent = _cursor.IndexTargetMax!.Component;
 
-        Vector2 MinPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMin!.Value, Rotation);
-        Vector2 MaxPos = Vector2.Rotate(_cursor.BlinkerRelativeDrawPositionMax!.Value, Rotation);
+        Vector2 BlinkerPosMin = _cursor.BlinkerRelativeDrawPositionMin!.Value;
+        Vector2 BlinkerPosMax = _cursor.BlinkerRelativeDrawPositionMax!.Value;
+
+        Vector2 MinPosFinal = Vector2.Rotate(BlinkerPosMin - Position, Rotation) + Position;
+
+        Vector2 MaxPosFinal = Vector2.Rotate(BlinkerPosMax - Position, Rotation) + Position;
 
         renderer.DrawLine(
             GetCursorColor(TargetedComponent.Mask),
-            MinPos,
-            MaxPos,
+            MinPosFinal,
+            MaxPosFinal,
             TargetedComponent.FontSize * CursorRelativeThickness,
             Shader,
             TargetedComponent.CustomSamplerState);
@@ -424,6 +445,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         public float CursorRelativeThickness { get; set; } = CURSOR_DEFAULT_RELATIVE_THICKNESS;
         public Vector2? BlinkerRelativeDrawPositionMin { get; set; }
         public Vector2? BlinkerRelativeDrawPositionMax { get; set; }
+        public float BlinkerCacheAspectRatio { get; set; } = 0f;
         public bool IsBlinkerAvailable => BlinkerRelativeDrawPositionMin.HasValue && BlinkerRelativeDrawPositionMax.HasValue;
     }
 

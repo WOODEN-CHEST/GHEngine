@@ -79,14 +79,16 @@ public class TestGame : Game
             },
         };
         Text.IsFocused = true;
-        Text.Origin = new(0.0f);
+        Text.Origin = new(0.5f);
         Text.Position = new(0.5f);
         Text.Rotation = 0f;
         Text.Alignment = TextAlignOption.Left;
         Text.IsTypingEnabled = true;
         Text.Rotation = 0f;
+        Text.CursorBlinkDelay = TimeSpan.FromSeconds(1000d);
 
         _textBox = Text;
+        _textBox.Rotation = MathF.PI / 4f * 1f;
 
         _mainFrame.Layers[0].AddItem(Text);
         _updatables.Add(Text);
