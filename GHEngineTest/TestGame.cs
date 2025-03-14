@@ -101,7 +101,7 @@ public class TestGame : Game
         Text.Rotation = 0f;
         //Text.CursorBlinkDelay = TimeSpan.FromSeconds(1000d);
 
-        //_textBox.Rotation = MathF.PI / 4f * 1f;
+        Text.Rotation = MathF.PI / 4f * 1f;
 
         _mainFrame.Layers[0].AddItem(Text);
         _updatables.Add(Text);

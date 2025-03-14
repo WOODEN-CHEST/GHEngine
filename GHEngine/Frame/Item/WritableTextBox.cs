@@ -113,14 +113,16 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     }
 
 
-    // Methods.
-
-
     // Private methods.
     /* Cursor. */
+    private Vector2 RotateWindowPosition(Vector2 windowPosition)
+    {
+        return Vector2.Rotate(GHMath.GetWindowAdjustedVector(windowPosition - Position, _userInput.InputAreaRatio), -Rotation) + Position;
+    }
+
     private int PositionToNearestTextIndex(Vector2 windowPosition)
     {
-        Vector2 RotatedWindowPosition = Vector2.Rotate(windowPosition, 0f);
+        Vector2 RotatedWindowPosition = RotateWindowPosition(windowPosition);
         int TextIndex = 0;
 
         Vector2 CurPosition = Position - (Origin * GHMath.GetWindowAdjustedVector(DrawSize, _userInput.InputAreaRatio));
@@ -129,7 +131,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             TextIndex += DrawLineIndex != 0 ? 1 : 0;
             DrawLine Line = DrawLines[DrawLineIndex];
             Vector2 LineDrawSize = GHMath.GetWindowAdjustedVector(Line.DrawSize, _userInput.InputAreaRatio);
-            if ((windowPosition.Y > CurPosition.Y + LineDrawSize.Y) && (DrawLineIndex != DrawLines.Length - 1))
+            if ((RotatedWindowPosition.Y > CurPosition.Y + LineDrawSize.Y) && (DrawLineIndex != DrawLines.Length - 1))
             {
                 CurPosition.Y += LineDrawSize.Y;
                 TextIndex += Line.Components.Select(component => component.Text.Length).Sum();
@@ -184,6 +186,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             || (curAspectRatio != _cursor.BlinkerCacheAspectRatio);
     }
 
+
     private void EnsureBlinkerRenderCache(float aspectRatio)
     {
         if (!IsBlinkerCacheInvalid(aspectRatio))
@@ -206,7 +209,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
                 }
 
                 int FinalTextIndex = _cursor.IndexMax - TextIndex - DrawLineIndex;
-                Vector2 DrawPosition = GetDrawPosition(DrawLines, Line, Component);
+                Vector2 DrawPositionOffset = GetDrawPosition(DrawLines, Line, Component) - Position;
                 Vector2 ComponentDrawSize = Component.CalculateDrawSize(Component.Text.Substring(0, FinalTextIndex));
 
                 if (IsTextInserted && (FinalTextIndex < Component.Text.Length))
@@ -214,15 +217,16 @@ public class WritableTextBox : TextBox, ITimeUpdatable
                     ComponentDrawSize += new Vector2(Component.CalculateDrawSize(Component.Text[FinalTextIndex].ToString()).X / 2f, 0f);
                 }
 
-                Vector2 OriginOffset = Origin * DrawSize;
+                Vector2 OriginOffset = Origin * GHMath.GetWindowAdjustedVector(DrawSize, aspectRatio);
 
-                Vector2 MinPoint = DrawPosition + GHMath.GetWindowAdjustedVector(
-                    new Vector2(ComponentDrawSize.X, 0f) - OriginOffset, aspectRatio);
+                Vector2 MinPoint = Position + GHMath.GetWindowAdjustedVector(DrawPositionOffset
+                    + new Vector2(ComponentDrawSize.X, 0f), aspectRatio) - OriginOffset;
 
                 Vector2 MaxPoint = MinPoint + GHMath.GetWindowAdjustedVector(new Vector2(0f, Component.FontSize), aspectRatio);
 
                 _cursor.BlinkerRelativeDrawPositionMin = new Vector2(MinPoint.X, MinPoint.Y);
                 _cursor.BlinkerRelativeDrawPositionMax = new Vector2(MaxPoint.X, MaxPoint.Y);
+
                 UpdateCursorTargets();
                 return;
             }
@@ -313,7 +317,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         MaxPosFinal.X /= renderer.AspectRatio;
         MinPosFinal.X /= renderer.AspectRatio;
-        
+
         MaxPosFinal += Position;
         MinPosFinal += Position;
 
