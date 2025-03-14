@@ -221,10 +221,8 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
                 Vector2 MaxPoint = MinPoint + GHMath.GetWindowAdjustedVector(new Vector2(0f, Component.FontSize), aspectRatio);
 
-                _cursor.BlinkerRelativeDrawPositionMin = GHMath.GetWindowAdjustedVector(
-                    new Vector2(MinPoint.X, MinPoint.Y), _userInput.InputAreaRatio);
-                _cursor.BlinkerRelativeDrawPositionMax = GHMath.GetWindowAdjustedVector(
-                    new Vector2(MaxPoint.X, MaxPoint.Y), _userInput.InputAreaRatio);
+                _cursor.BlinkerRelativeDrawPositionMin = new Vector2(MinPoint.X, MinPoint.Y);
+                _cursor.BlinkerRelativeDrawPositionMax = new Vector2(MaxPoint.X, MaxPoint.Y);
                 UpdateCursorTargets();
                 return;
             }
