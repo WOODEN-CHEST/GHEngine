@@ -118,6 +118,63 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
     // Private methods.
     /* Cursor. */
+    private int PositionToNearestTextIndex(Vector2 windowPosition)
+    {
+        Vector2 RotatedWindowPosition = Vector2.Rotate(windowPosition, 0f);
+        int TextIndex = 0;
+
+        Vector2 CurPosition = Position - (Origin * GHMath.GetWindowAdjustedVector(DrawSize, _userInput.InputAreaRatio));
+        for (int DrawLineIndex = 0; DrawLineIndex < DrawLines.Length; DrawLineIndex++)
+        {
+            TextIndex += DrawLineIndex != 0 ? 1 : 0;
+            DrawLine Line = DrawLines[DrawLineIndex];
+            Vector2 LineDrawSize = GHMath.GetWindowAdjustedVector(Line.DrawSize, _userInput.InputAreaRatio);
+            if ((windowPosition.Y > CurPosition.Y + LineDrawSize.Y) && (DrawLineIndex != DrawLines.Length - 1))
+            {
+                CurPosition.Y += LineDrawSize.Y;
+                TextIndex += Line.Components.Select(component => component.Text.Length).Sum();
+                continue;
+            }
+
+            return TextIndex + GetNearestTextIndexInDrawLine(Line, CurPosition, RotatedWindowPosition);
+        }
+
+        return 0;
+    }
+
+    private int GetNearestTextIndexInDrawLine(DrawLine line, Vector2 startPosition, Vector2 rotatedWindowPosition)
+    {
+        Vector2 CurPosition = startPosition;
+        TextComponent TargetComponent = line.Components[0];
+        int LineCharIndex = 0;
+
+        for (int ComponentIndex = 0; ComponentIndex < line.Components.Count; ComponentIndex++)
+        {
+            TargetComponent = line.Components[ComponentIndex];
+            if (CurPosition.X + TargetComponent.DrawSize.X >= rotatedWindowPosition.X)
+            {
+                break;
+            }
+            LineCharIndex += TargetComponent.Text.Length;
+            CurPosition.X += GHMath.GetWindowAdjustedVector(TargetComponent.DrawSize, _userInput.InputAreaRatio).X;
+        }
+
+        int ComponentCharIndex = 0;
+        while ((CurPosition.X < rotatedWindowPosition.X) && (ComponentCharIndex < TargetComponent.Text.Length))
+        {
+            Vector2 CharDrawSize = TargetComponent.CalculateDrawSize(TargetComponent.Text[ComponentCharIndex].ToString());
+            CharDrawSize = GHMath.GetWindowAdjustedVector(CharDrawSize, _userInput.InputAreaRatio);
+            if (CurPosition.X + (CharDrawSize.X * 0.5f) > rotatedWindowPosition.X)
+            {
+                break;
+            }
+            ComponentCharIndex++;
+            CurPosition.X += CharDrawSize.X;
+        }
+
+        return LineCharIndex + ComponentCharIndex;
+    }
+
     private bool IsBlinkerCacheInvalid(float curAspectRatio)
     {
         return (_cursor.BlinkerRelativeDrawPositionMin == null)
@@ -164,8 +221,10 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
                 Vector2 MaxPoint = MinPoint + GHMath.GetWindowAdjustedVector(new Vector2(0f, Component.FontSize), aspectRatio);
 
-                _cursor.BlinkerRelativeDrawPositionMin = new Vector2(MinPoint.X, MinPoint.Y);
-                _cursor.BlinkerRelativeDrawPositionMax = new Vector2(MaxPoint.X, MaxPoint.Y);
+                _cursor.BlinkerRelativeDrawPositionMin = GHMath.GetWindowAdjustedVector(
+                    new Vector2(MinPoint.X, MinPoint.Y), _userInput.InputAreaRatio);
+                _cursor.BlinkerRelativeDrawPositionMax = GHMath.GetWindowAdjustedVector(
+                    new Vector2(MaxPoint.X, MaxPoint.Y), _userInput.InputAreaRatio);
                 UpdateCursorTargets();
                 return;
             }
@@ -351,6 +410,14 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         {
             TargetAction = () => MoveSingleCursor(-1);
         }
+        if (_userInput.AreKeysDown(Keys.Up))
+        {
+
+        }
+        if (_userInput.AreKeysDown(Keys.Down))
+        {
+
+        }
 
         if (TargetAction != null)
         {
@@ -486,6 +553,11 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         if (_userInput.WereKeysJustPressed(Keys.Insert))
         {
             IsTextInserted = !IsTextInserted;
+        }
+
+        if (_userInput.WereMouseButtonsJustPressed(MouseButton.Left))
+        {
+            SetSingleSelection(PositionToNearestTextIndex(_userInput.VirtualMousePositionCurrent));
         }
     }
 

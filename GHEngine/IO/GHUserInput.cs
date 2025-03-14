@@ -56,7 +56,7 @@ public class GHUserInput : IUserInput
         }
     }
 
-    public float InputAreaRatio { get; private set; }
+    public float InputAreaRatio { get; set; }
 
     public event EventHandler<TextInputEventArgs>? TextInput;
     public event EventHandler<FileDropEventArgs>? FileDrop;

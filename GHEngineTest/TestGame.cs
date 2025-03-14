@@ -25,7 +25,6 @@ public class TestGame : Game
     private IGameFrame _mainFrame;
     private readonly IModifiableProgramTime _time = new GenericProgramTime();
     private readonly HashSet<ITimeUpdatable> _updatables = new();
-    private TextBox _textBox;
 
 
     // Constructors.
@@ -35,11 +34,17 @@ public class TestGame : Game
     }
 
 
+    // Private methods.
+    private void UpdateUserInputProperties()
+    {
+
+    }
+
+
     // Inherited methods.
     protected override void Initialize()
     {
         base.Initialize();
-
         
         _userInput = new GHUserInput(Window, this);
 
@@ -48,6 +53,15 @@ public class TestGame : Game
         _renderer = GHRenderer.Create(_graphicsManager.GraphicsDevice, _display);
         _mainFrame = new GHGameFrame();
         _mainFrame.AddLayer(new GHLayer("0"));
+
+        _userInput.InputAreaSizePixels = (Vector2)_display.CurrentWindowSize;
+        _userInput.InputAreaRatio = (float)_display.CurrentWindowSize.X / (float)_display.CurrentWindowSize.Y;
+
+        _display.ScreenSizeChange += (sender, args) =>
+        {
+            _userInput.InputAreaSizePixels = (Vector2)args.NewSize;
+            _userInput.InputAreaRatio = (float)args.NewSize.X / (float)args.NewSize.Y;
+        };
 
         IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"C:\Users\User\Desktop\test");
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
@@ -87,7 +101,6 @@ public class TestGame : Game
         Text.Rotation = 0f;
         //Text.CursorBlinkDelay = TimeSpan.FromSeconds(1000d);
 
-        _textBox = Text;
         //_textBox.Rotation = MathF.PI / 4f * 1f;
 
         _mainFrame.Layers[0].AddItem(Text);
