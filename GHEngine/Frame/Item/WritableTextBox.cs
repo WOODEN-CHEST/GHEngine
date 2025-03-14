@@ -76,7 +76,20 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     }
 
     public bool IsSelectionMade => _cursor.IsSelectionMode;
-    public bool IsTextInserted { get; set; } = false;
+    public bool IsTextInserted
+    {
+        get => _isTextInserted;
+        set
+        {
+            if (_isTextInserted == value)
+            {
+                return;
+            }
+            _isTextInserted = value;
+            _cursor.BlinkerTimer = 0d;
+            InvalidateBlinkerCache();
+        }
+    }
 
     public TimeSpan NavigationDelayInitial { get; set; } = NAVIGATION_DELAY_INITIAL_DEFAULT;
     public TimeSpan NavigationDelayRepeat { get; set; } = NAVIGATION_DELAY_REPEAT_DEFAULT;
@@ -87,6 +100,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     private readonly IUserInput _userInput;
     private bool _isFocused = false;
     private TextCursor _cursor = new();
+    private bool _isTextInserted = false;
 
     private double _navigationDelaySeconds = 0d;
     private NavigationDelayType _navigationDelayType = NavigationDelayType.NoDelay;
@@ -122,28 +136,33 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         _cursor.BlinkerCacheAspectRatio = aspectRatio;
         int TextIndex = 0;
-        foreach (DrawLine Line in DrawLines)
+        for (int DrawLineIndex = 0; DrawLineIndex < DrawLines.Length; DrawLineIndex++)
         {
-            for (int i = 0; i < Line.Components.Count; i++)
+            DrawLine Line = DrawLines[DrawLineIndex];
+            for (int ComponentIndex = 0; ComponentIndex < Line.Components.Count; ComponentIndex++)
             {
-                TextComponent Component = Line.Components[i];
-                if ((_cursor.IndexMax >= Component.Text.Length + TextIndex) && (i < Line.Components.Count))
+                TextComponent Component = Line.Components[ComponentIndex];
+                if ((_cursor.IndexMax > Component.Text.Length + TextIndex + DrawLineIndex) && (DrawLineIndex < DrawLines.Length - 1))
                 {
                     TextIndex += Component.Text.Length;
                     continue;
                 }
 
+                int FinalTextIndex = _cursor.IndexMax - TextIndex - DrawLineIndex;
                 Vector2 DrawPosition = GetDrawPosition(DrawLines, Line, Component);
-                Vector2 ComponentDrawSize = Component.CalculateDrawSize(Component.Text.Substring(0, _cursor.IndexMax - TextIndex));
+                Vector2 ComponentDrawSize = Component.CalculateDrawSize(Component.Text.Substring(0, FinalTextIndex));
+
+                if (IsTextInserted && (FinalTextIndex < Component.Text.Length))
+                {
+                    ComponentDrawSize += new Vector2(Component.CalculateDrawSize(Component.Text[FinalTextIndex].ToString()).X / 2f, 0f);
+                }
+
                 Vector2 OriginOffset = Origin * DrawSize;
 
                 Vector2 MinPoint = DrawPosition + GHMath.GetWindowAdjustedVector(
                     new Vector2(ComponentDrawSize.X, 0f) - OriginOffset, aspectRatio);
 
-                Vector2 MaxPoint = MinPoint + GHMath.GetWindowAdjustedVector(new Vector2(0f, Component.DrawSize.Y), aspectRatio);
-
-                //Vector2 MaxPoint = DrawPosition + GHMath.GetWindowAdjustedVector(
-                //    new Vector2(ComponentDrawSize.X, Component.DrawSize.Y) - OriginOffset, aspectRatio);
+                Vector2 MaxPoint = MinPoint + GHMath.GetWindowAdjustedVector(new Vector2(0f, Component.FontSize), aspectRatio);
 
                 _cursor.BlinkerRelativeDrawPositionMin = new Vector2(MinPoint.X, MinPoint.Y);
                 _cursor.BlinkerRelativeDrawPositionMax = new Vector2(MaxPoint.X, MaxPoint.Y);
@@ -187,9 +206,10 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     private CursorTarget GetTarget(int targetIndex)
     {
         int CurrentIndex = 0;
-        foreach (TextComponent Component in this)
+        for (int ComponentIndex = 0; ComponentIndex < ComponentCount; ComponentIndex++)
         {
-            if (targetIndex < Component.Text.Length + CurrentIndex)
+            TextComponent Component = this[ComponentIndex];
+            if ((targetIndex < Component.Text.Length + CurrentIndex) || (ComponentIndex >= ComponentCount - 1))
             {
                 return new(Component, targetIndex - CurrentIndex);
             }
@@ -210,11 +230,23 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         _cursor.BlinkerTimer = 0d;
     }
 
+    private float GetBLinkerThickness(TextComponent targetedComponent, int textIndex)
+    {
+        float Thickness = targetedComponent.FontSize * CursorRelativeThickness;
+        if (IsTextInserted && textIndex < targetedComponent.Text.Length)
+        {
+            Thickness = Math.Max(Thickness, targetedComponent.CalculateDrawSize(
+                targetedComponent.Text[textIndex].ToString()).X);
+        }
+        return Thickness;
+    }
+
     private void RenderBlinker(IRenderer renderer, IProgramTime time)
     {
         EnsureBlinkerRenderCache(renderer.AspectRatio);
 
-        TextComponent TargetedComponent = _cursor.IndexTargetMax!.Component;
+        CursorTarget CurrentTarget = _cursor.IndexTargetMax!;
+        TextComponent TargetedComponent = CurrentTarget.Component;
 
         Vector2 BlinkerPosMin = _cursor.BlinkerRelativeDrawPositionMin!.Value;
         Vector2 BlinkerPosMax = _cursor.BlinkerRelativeDrawPositionMax!.Value;
@@ -232,7 +264,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             GetCursorColor(TargetedComponent.Mask),
             MinPosFinal,
             MaxPosFinal,
-            TargetedComponent.FontSize * CursorRelativeThickness,
+            GetBLinkerThickness(TargetedComponent, CurrentTarget.TextIndex),
             Shader,
             TargetedComponent.CustomSamplerState);
     }
@@ -247,11 +279,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         }
 
         ExecuteKeyPress(args.Character, args.Key);
-    }
-
-    private void RemoveSelection(int indexMin, int indexMax)
-    {
-
     }
 
     /* Navigation. */
@@ -283,8 +310,9 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             return;
         }
 
-        for (int i = _cursor.IndexMax; i >= 0; i--)
+        for (int i = _cursor.IndexMax; i > 0;)
         {
+            i--;
             if ((i >= Length) || (Text[i] != '\n'))
             {
                 continue;
@@ -366,7 +394,8 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         }
     }
 
-    private void TypeCharacter(char character)
+    /* Typing. */
+    private void TypeText(string text)
     {
         if (_cursor.IndexTargetMax == null)
         {
@@ -380,7 +409,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         
         string LeftPart = OriginalText.Substring(0, LeftIndex);
         string RightPart = OriginalText.Substring(RightIndex, OriginalText.Length - RightIndex);
-        string CombinedText = $"{LeftPart}{character}{RightPart}";
+        string CombinedText = $"{LeftPart}{text}{RightPart}";
 
         Target.Component.Text = CombinedText;
 
@@ -388,45 +417,89 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         ResetBlinkTimer();
     }
 
-    private void DeleteCharacter()
+    private void DeleteText(int minIndex, int maxIndexExclusive, int cursorMove)
     {
+        if (_cursor.IndexTargetMax == null)
+        {
+            UpdateCursorTargets();
+        }
+        CursorTarget Target = _cursor.IndexTargetMin!;
 
+        string OriginalText = Target.Component.Text;
+
+        int LeftIndex = Math.Max(0, minIndex);
+        int RightIndex = Math.Min(maxIndexExclusive, OriginalText.Length);
+
+        string LeftPart = OriginalText.Substring(0, LeftIndex);
+        string RightPart = OriginalText.Substring(RightIndex, OriginalText.Length - RightIndex);
+        string CombinedText = $"{LeftPart}{RightPart}";
+
+        Target.Component.Text = CombinedText;
+
+        MoveSingleCursor(cursorMove);
+        ResetBlinkTimer();
     }
 
     private void ExecuteKeyPress(char character, Keys key)
     {
         if (IsSelectionMade)
         {
-            RemoveSelection(_cursor.IndexMin, _cursor.IndexMax);
+            DeleteText(_cursor.IndexMin, _cursor.IndexMax, -1);
         }
 
-        if ((key == Keys.Back) || (key == Keys.Delete))
+        if (key == Keys.Back)
         {
-            DeleteCharacter();
+            DeleteText(_cursor.IndexMin - 1, _cursor.IndexMax, -1);
+        }
+        else if (key == Keys.Delete)
+        {
+            DeleteText(_cursor.IndexMin, _cursor.IndexMax + 1, 0);
+        }
+        else if (key == Keys.Enter)
+        {
+            TypeText("\n");
+        }
+        else if (key == Keys.Tab)
+        {
+            TypeText("    ");
         }
         else
         {
-            TypeCharacter(character);
+            TypeText(character.ToString());
         }
     }
-
 
     // Inherited methods.
     public void Update(IProgramTime time)
     {
         _cursor.BlinkerTimer = (_cursor.BlinkerTimer + time.PassedTime.TotalSeconds) % (CursorBlinkDelay.TotalSeconds * 2d);
 
-        if (IsFocused && IsKeyNavigationAllowed)
+        if (!IsFocused)
+        {
+            return;
+        }
+
+        if (IsKeyNavigationAllowed)
         {
             NavigateKeyboard(time);
+        }
+        if (_userInput.WereKeysJustPressed(Keys.Insert))
+        {
+            IsTextInserted = !IsTextInserted;
         }
     }
 
     public override void Render(IRenderer renderer, IProgramTime time)
     {
+        bool ShouldRenderBlinker = IsFocused && IsTypingEnabled && (_cursor.BlinkerTimer <= CursorBlinkDelay.TotalSeconds);
+        if (IsTextInserted && ShouldRenderBlinker)
+        {
+            RenderBlinker(renderer, time);
+        }
+
         base.Render(renderer, time);
 
-        if (IsFocused && IsTypingEnabled && (_cursor.BlinkerTimer <= CursorBlinkDelay.TotalSeconds))
+        if (!IsTextInserted && ShouldRenderBlinker)
         {
             RenderBlinker(renderer, time);
         }

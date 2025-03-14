@@ -296,11 +296,6 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                     CurrentLine = new();
                 }
 
-                if (TextLines[LineStringIndex].Length == 0)
-                {
-                    continue;
-                }
-
                 CurrentLine.Components.Add(new(Component) { Text = TextLines[LineStringIndex] });
             }
         }
@@ -466,6 +461,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     {
         _cachedText = null;
         _drawLines = null;
+        _cachedDrawSize = null;
         if (!IsNewlineAllowed)
         {
             EnsureNoNewlines();

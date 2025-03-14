@@ -183,6 +183,6 @@ public class TextComponent : IColorMaskable
     public Vector2 CalculateDrawSize(string text)
     {
         GHFontProperties Properties = new(1f, IsBold, IsItalic, LineSpacing, CharSpacing);
-        return FontFamily.MeasureRelativeSize(text, Properties) * FontSize;
+        return new((FontFamily.MeasureRelativeSize(text, Properties) * FontSize).X, FontSize);
     }
 }
