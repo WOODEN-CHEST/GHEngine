@@ -69,6 +69,8 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         set => _isFocused = value;
     }
 
+    public bool IsFocusedBasedOnClicks { get; set; } = false;
+
     public float CursorRelativeThickness
     {
         get => _cursor.CursorRelativeThickness;
@@ -117,7 +119,9 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     /* Cursor. */
     private Vector2 RotateWindowPosition(Vector2 windowPosition)
     {
-        return Vector2.Rotate(GHMath.GetWindowAdjustedVector(windowPosition - Position, _userInput.InputAreaRatio), -Rotation) + Position;
+        return windowPosition;
+        // TODO: add support for clicking rotated text (below code does not work).
+        // return Vector2.Rotate(GHMath.GetWindowAdjustedVector(windowPosition - Position, _userInput.InputAreaRatio), -Rotation) + Position;
     }
 
     private int PositionToNearestTextIndex(Vector2 windowPosition)

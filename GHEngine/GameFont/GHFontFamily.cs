@@ -127,11 +127,11 @@ public class GHFontFamily : IDisposable
 
         /* Garbage-ass algorithm used to generate image textures, but it works for MOST cases. */
         using Image<Rgba32> FontImage = new(
-            (int)Math.Ceiling(DrawBounds.Width * 4f),
-            (int)Math.Ceiling(DrawBounds.Height * 4f),
+            (int)Math.Ceiling(AdvanceBounds.Width * 4f),
+            (int)Math.Ceiling(AdvanceBounds.Height * 4f),
             new Rgba32(0u));
 
-        TargetTextOptions.Origin = new System.Numerics.Vector2(FontImage.Width / 4, FontImage.Height / 4);
+        TargetTextOptions.Origin = new System.Numerics.Vector2(FontImage.Width / 2f, FontImage.Height / 2f);
 
         FontImage.Mutate(context =>
         {

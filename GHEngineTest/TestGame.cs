@@ -86,7 +86,7 @@ public class TestGame : Game
 
         WritableTextBox Text = new(_userInput)
         {
-            new TextComponent(FontFamily1, "Hello World!\nHello World2\nHello World3")
+            new TextComponent(FontFamily1, ".")
             {
                 FontSize = 0.25f,
                 Mask = Color.Red,
@@ -101,7 +101,7 @@ public class TestGame : Game
         Text.Rotation = 0f;
         //Text.CursorBlinkDelay = TimeSpan.FromSeconds(1000d);
 
-        Text.Rotation = MathF.PI / 4f * 1f;
+        Text.Rotation = MathF.PI / 4f * 0f;
 
         _mainFrame.Layers[0].AddItem(Text);
         _updatables.Add(Text);

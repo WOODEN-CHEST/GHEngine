@@ -40,19 +40,6 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
         return FramePaths;
     }
 
-    private float GetAsFloat(object targetObject, string entryName)
-    {
-        if (targetObject is long LongObj)
-        {
-            return (float)(long)targetObject;
-        }
-        if (targetObject is double DoubleObj)
-        {
-            return (float)DoubleObj;
-        }
-        throw new JSONEntryException($"Entry \"{entryName}\" is not a number.");
-    }
-
     private RectangleF? GetDrawRegion(JSONCompound animation)
     {
         if (!animation.Get(KEY_DRAW_REGION, out JSONCompound? Compound))
@@ -60,10 +47,10 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
             return null;
         }
 
-        float X = GetAsFloat(animation.GetVerified<object>(KEY_X), KEY_X);
-        float Y = GetAsFloat(animation.GetVerified<object>(KEY_Y), KEY_Y);
-        float Width = GetAsFloat(animation.GetVerified<object>(KEY_WIDTH), KEY_WIDTH);
-        float Height = GetAsFloat(animation.GetVerified<object>(KEY_HEIGHT), KEY_HEIGHT);
+        float X = (float)JSONUtilities.GetDouble(animation.GetVerified<object>(KEY_X));
+        float Y = (float)JSONUtilities.GetDouble(animation.GetVerified<object>(KEY_Y));
+        float Width = (float)JSONUtilities.GetDouble(animation.GetVerified<object>(KEY_WIDTH));
+        float Height = (float)JSONUtilities.GetDouble(animation.GetVerified<object>(KEY_HEIGHT));
 
         return new RectangleF(X, Y, Width, Height);
     }
