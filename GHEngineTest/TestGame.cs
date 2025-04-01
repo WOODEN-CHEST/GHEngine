@@ -102,6 +102,7 @@ public class TestGame : Game
         //Text.CursorBlinkDelay = TimeSpan.FromSeconds(1000d);
 
         Text.Rotation = MathF.PI / 4f * 0f;
+        Text.IsFocusedBasedOnClicks = true;
 
         _mainFrame.Layers[0].AddItem(Text);
         _updatables.Add(Text);

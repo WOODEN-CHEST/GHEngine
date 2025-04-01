@@ -334,6 +334,51 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             TargetedComponent.CustomSamplerState);
     }
 
+    private bool IsClickInBounds(Vector2 clickPosition)
+    {
+        // Does not account for rotation.
+        Vector2 Size = GHMath.GetWindowAdjustedVector(DrawSize, _userInput.InputAreaRatio);
+
+        Vector2 Min = Position - (Size * Origin);
+        Vector2 Max = Min + Size;
+
+        return (Min.X <= clickPosition.X) && (clickPosition.X <= Max.X)
+            && (Min.Y <= clickPosition.Y) && (clickPosition.Y <= Max.Y);
+    }
+
+    private void UpdateCursor(IProgramTime time)
+    {
+
+        bool WasLeftClickPressed = _userInput.WereMouseButtonsJustPressed(MouseButton.Left);
+        Vector2 MousePosition = _userInput.VirtualMousePositionCurrent;
+
+        if (WasLeftClickPressed && IsFocusedBasedOnClicks)
+        {
+            IsFocused = IsClickInBounds(MousePosition);
+        }
+
+        if (!IsFocused)
+        {
+            return;
+        }
+
+        _cursor.BlinkerTimer = (_cursor.BlinkerTimer + time.PassedTime.TotalSeconds) % (CursorBlinkDelay.TotalSeconds * 2d);
+
+        if (IsKeyNavigationAllowed)
+        {
+            NavigateKeyboard(time);
+        }
+        if (_userInput.WereKeysJustPressed(Keys.Insert))
+        {
+            IsTextInserted = !IsTextInserted;
+        }
+
+        if (WasLeftClickPressed)
+        {
+            SetSingleSelection(PositionToNearestTextIndex(MousePosition));
+        }
+    }
+
 
     /* Typing. */
     private void OnKeyInputEvent(object? sender, TextInputEventArgs args)
@@ -345,6 +390,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         ExecuteKeyPress(args.Character, args.Key);
     }
+
 
     /* Navigation. */
     private void NavigateToEnd(bool isFullEnd)
@@ -545,26 +591,7 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     // Inherited methods.
     public void Update(IProgramTime time)
     {
-        _cursor.BlinkerTimer = (_cursor.BlinkerTimer + time.PassedTime.TotalSeconds) % (CursorBlinkDelay.TotalSeconds * 2d);
-
-        if (!IsFocused)
-        {
-            return;
-        }
-
-        if (IsKeyNavigationAllowed)
-        {
-            NavigateKeyboard(time);
-        }
-        if (_userInput.WereKeysJustPressed(Keys.Insert))
-        {
-            IsTextInserted = !IsTextInserted;
-        }
-
-        if (_userInput.WereMouseButtonsJustPressed(MouseButton.Left))
-        {
-            SetSingleSelection(PositionToNearestTextIndex(_userInput.VirtualMousePositionCurrent));
-        }
+        UpdateCursor(time);
     }
 
     public override void Render(IRenderer renderer, IProgramTime time)
