@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets.Def;
 
-public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionReader
+public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
 {
     // Private static fields.
     private const string KEY_NAME = "name";
