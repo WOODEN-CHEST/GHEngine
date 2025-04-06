@@ -9,15 +9,16 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets.Def;
 
-public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
+public class JSONAssetDefinitionReader : IAssetDefinitionConverter
 {
     // Private static fields.
     private const string KEY_NAME = "name";
 
 
     // Private fields.
-    private readonly Dictionary<AssetType, JSONAssetDefinitionDeconstructor> _deconstructors = new();
+    private readonly Dictionary<AssetType, JSONAssetDefinitionConverter> _converters = new();
     private readonly JSONDeserializer _deserializer = new();
+    private readonly JSONSerializer _serializer = new();
     private readonly ILogger? _logger;
 
 
@@ -26,11 +27,11 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
     {
         _logger = logger;
 
-        SetDeconstructor(AssetType.Animation, new JSONAnimationDeconstructor());
-        SetDeconstructor(AssetType.Sound, new JSONSoundDeconstructor());
-        SetDeconstructor(AssetType.Font, new JSONFontDeconstructor());
-        SetDeconstructor(AssetType.Shader, new JSONShaderDeconstructor());
-        SetDeconstructor(AssetType.Language, new JSONLanguageDeconstructor());
+        SetDeconstructor(AssetType.Animation, new JSONAnimationConverter());
+        SetDeconstructor(AssetType.Sound, new JSONSoundConverter());
+        SetDeconstructor(AssetType.Font, new JSONFontConverter());
+        SetDeconstructor(AssetType.Shader, new JSONShaderConverter());
+        SetDeconstructor(AssetType.Language, new JSONLanguageConverter());
     }
 
 
@@ -49,8 +50,8 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
                 continue;
             }
 
-            if (_deconstructors.TryGetValue(new AssetType(Entry.Key, Entry.Key), 
-                out JSONAssetDefinitionDeconstructor? Deconstructor))
+            if (_converters.TryGetValue(new AssetType(Entry.Key, Entry.Key), 
+                out JSONAssetDefinitionConverter? Deconstructor))
             {
                 ReadAssetDefinitionArray(definitions, AssetList, Deconstructor);
             }
@@ -59,7 +60,7 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
 
     private void ReadAssetDefinitionArray(IAssetDefinitionCollection definitions,
         JSONList assetList,
-        JSONAssetDefinitionDeconstructor deconstructor)
+        JSONAssetDefinitionConverter deconstructor)
     {
         foreach (object? TargetObject in assetList)
         {
@@ -73,7 +74,7 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
             try
             {
                 string Name = Compound.GetVerified<string>(KEY_NAME);
-                definitions.Add(deconstructor.DeconstructDefinition(Name, Compound));
+                definitions.Add(deconstructor.ReadDefinition(Name, Compound));
             }
             catch (JSONEntryException e)
             {
@@ -82,48 +83,79 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
         }
     }
 
+    private JSONList GetAssetsOfType(AssetType type, IAssetDefinitionCollection definitions)
+    {
+        JSONList AssetList = new();
+        if (!_converters.TryGetValue(type, out var Converter))
+        {
+            return AssetList;
+        }
+        
+        foreach (AssetDefinition Definition in definitions.GetOfType(type))
+        {
+            JSONCompound Compound = new();
+            Compound.Add(KEY_NAME, Definition.Name);
+            Converter.WriteDefinition(Definition, Compound);
+            AssetList.Add(Compound);
+        }
+        return AssetList;
+    }
+
 
     // Methods.
-    public void SetDeconstructor(AssetType type, JSONAssetDefinitionDeconstructor deconstructor)
+    public void SetDeconstructor(AssetType type, JSONAssetDefinitionConverter deconstructor)
     {
-        _deconstructors[type] = deconstructor ?? throw new ArgumentNullException(nameof(deconstructor));
+        _converters[type] = deconstructor ?? throw new ArgumentNullException(nameof(deconstructor));
     }
 
     public void RemoveDeconstructor(AssetType type)
     {
-        _deconstructors.Remove(type);
+        _converters.Remove(type);
     }
 
     public void ClearDeconstructors()
     {
-        _deconstructors.Clear();
+        _converters.Clear();
     }
 
     public AssetType[] GetSupportedTypes()
     {
-        return _deconstructors.Keys.ToArray();
+        return _converters.Keys.ToArray();
     }
 
 
     // Inherited methods.
     public void Read(IAssetDefinitionCollection definitions, string directoryPath)
     {
+        ArgumentNullException.ThrowIfNull(definitions, nameof(definitions));
+        ArgumentNullException.ThrowIfNull(directoryPath, nameof(directoryPath));
+
         if (!Directory.Exists(directoryPath))
         {
             return;
         }
 
-        foreach (string FilePath in Directory.GetFiles(directoryPath, "*.json", SearchOption.AllDirectories))
+        try
         {
-            using (FileStream FileData = File.OpenRead(FilePath))
+            foreach (string FilePath in Directory.GetFiles(directoryPath, "*.json", SearchOption.AllDirectories))
             {
-                Read(definitions, FileData);
+                using (FileStream FileData = File.OpenRead(FilePath))
+                {
+                    Read(definitions, FileData);
+                }
             }
+        }
+        catch (IOException e)
+        {
+            throw new AssetDefinitionReadException($"Failed to read asset definitions in directory: {e}");
         }
     }
 
     public void Read(IAssetDefinitionCollection definitions, Stream dataStream)
     {
+        ArgumentNullException.ThrowIfNull(definitions, nameof(definitions));
+        ArgumentNullException.ThrowIfNull(dataStream, nameof(dataStream));
+
         string JSONData = new StreamReader(dataStream).ReadToEnd();
 
         try
@@ -134,9 +166,66 @@ public class JSONAssetDefinitionReader : ISingleTypeAssetDefinitionConverter
                 ReadJSONDefinitions(definitions, JSONDefinitions);
             }
         }
-        catch (JSONDeserializeException e)
+        catch (Exception e) when ((e is IOException) || (e is JSONEntryException))
         {
             throw new AssetDefinitionReadException($"Malformed JSON for asset definition: {e}");
+        }
+    }
+
+    public void Write(IAssetDefinitionCollection definitions, string assetFilePath)
+    {
+        if (!Path.IsPathFullyQualified(assetFilePath))
+        {
+            throw new ArgumentException("Asset definition write path must be fully qualified.");
+        }
+
+        string? ParentDir = Path.GetDirectoryName(assetFilePath);
+        string ModifiedPath = Path.ChangeExtension(assetFilePath, ".json");
+
+        try
+        {
+            if (ParentDir != null)
+            {
+                Directory.CreateDirectory(ParentDir);
+            }
+            
+            if (File.Exists(ModifiedPath))
+            {
+                throw new AssetDefinitionReadException($"Cannot write asset definitions to file \"{ModifiedPath}\" " +
+                    $"since it already exists.");
+            }
+            Write(definitions, File.OpenWrite(ModifiedPath));
+        }
+        catch (IOException e)
+        {
+            throw new AssetDefinitionWriteException($"Couldn't write asset definitions to file \"{assetFilePath}\": {e}");
+        }
+    }
+
+    public void Write(IAssetDefinitionCollection definitions, Stream dataStream)
+    {
+        JSONCompound RootCompound = new();
+
+        AssetType[] AssetTypes = new AssetType[] {
+            AssetType.Animation,
+            AssetType.Sound,
+            AssetType.Font,
+            AssetType.Language,
+            AssetType.Shader,
+        };
+
+        foreach (AssetType Type in AssetTypes)
+        {
+            RootCompound.Add(Type.TypeName, GetAssetsOfType(Type, definitions));
+        }
+
+        try
+        {
+            new StreamWriter(dataStream, Encoding.UTF8).Write(_serializer.Serialize(RootCompound, true));
+        }
+        catch (IOException e)
+        {
+            throw new AssetDefinitionWriteException($"Couldn't write asset definitions: {e}");
         }
     }
 }

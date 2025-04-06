@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets.Def;
 
-public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
+public class JSONAnimationConverter : JSONAssetDefinitionConverter
 {
     // Private static fields.
     private const string KEY_FRAMES = "frames";
@@ -25,7 +25,7 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
 
 
     // Private fields.
-    private readonly JSONPathDeconstructor _pathDeconstructor = new();
+    private readonly JSONPathConverter _pathDeconstructor = new();
 
 
     // Private methods.
@@ -57,7 +57,7 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
 
 
     // Inherited methods.
-    public override AssetDefinition DeconstructDefinition(string assetName, JSONCompound compound)
+    public override AssetDefinition ReadDefinition(string assetName, JSONCompound compound)
     {
         AssetPath[] Frames = GetAnimationFrames(compound);
         RectangleF? DrawRegion = GetDrawRegion(compound);
@@ -67,5 +67,10 @@ public class JSONAnimationDeconstructor : JSONAssetDefinitionDeconstructor
         bool IsAnimated = compound.GetVerifiedOrDefault(KEY_IS_ANIMATED, true);
 
         return new GHAnimationDefinition(assetName, Frames, FPS, Step, DrawRegion, IsLooped, IsAnimated);
+    }
+
+    public override void WriteDefinition(AssetDefinition definition, JSONCompound compound)
+    {
+        GHAnimationDefinition CastDefinition = (GHAnimationDefinition)definition;
     }
 }

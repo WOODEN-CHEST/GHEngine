@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets.Def;
 
-public class JSONPathDeconstructor
+public class JSONPathConverter
 {
     // Private static fields.
     private const int LIST_LENGTH = 2;
@@ -33,11 +33,22 @@ public class JSONPathDeconstructor
         };
     }
 
+    private string PathTypeToString(AssetPathType type)
+    {
+        return type switch
+        {
+            AssetPathType.FileSystem => TYPE_FILE,
+            AssetPathType.Memory => TYPE_MEMORY,
+            _ => throw new JSONEntryException($"Invalid asset path type: \"{type}\"")
+        };
+    }
+
     private AssetPath GetListPath(JSONList list)
     {
         if (list.Count != LIST_LENGTH)
         {
-            throw new JSONEntryException($"Invalid entry count in path list: {list.Count}, expected {LIST_LENGTH}");
+            throw new JSONEntryException($"Invalid entry count in path list: {list.Count}, expected {LIST_LENGTH} " +
+                $"(1: path name, 2: path type)");
         }
 
         string PathName = list.GetVerified<string>(0);
@@ -69,5 +80,14 @@ public class JSONPathDeconstructor
             return GetCompoundPath(TargetCompound);
         }
         throw new JSONEntryException($"Can't resolve asset path with value: {new JSONSerializer().Serialize(path, false)}");
+    }
+
+    public object WritePath(AssetPath path)
+    {
+        if (path.Type == AssetPathType.FileSystem)
+        {
+            return path.Path;
+        }
+        return new JSONList() { path.Path, PathTypeToString(path.Type) };
     }
 }
