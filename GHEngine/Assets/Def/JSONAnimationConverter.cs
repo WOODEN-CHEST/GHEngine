@@ -25,7 +25,7 @@ public class JSONAnimationConverter : JSONAssetDefinitionConverter
 
 
     // Private fields.
-    private readonly JSONPathConverter _pathDeconstructor = new();
+    private readonly JSONPathConverter _pathConverter = new();
 
 
     // Private methods.
@@ -35,7 +35,7 @@ public class JSONAnimationConverter : JSONAssetDefinitionConverter
         AssetPath[] FramePaths = new AssetPath[Frames.Count];
         for (int i = 0; i < Frames.Count; i++)
         {
-            FramePaths[i] = _pathDeconstructor.GetPath(Frames.GetVerified<object>(i));
+            FramePaths[i] = _pathConverter.GetPath(Frames.GetVerified<object>(i));
         }
         return FramePaths;
     }
@@ -55,6 +55,30 @@ public class JSONAnimationConverter : JSONAssetDefinitionConverter
         return new RectangleF(X, Y, Width, Height);
     }
 
+    private JSONCompound CreateDrawRegion(RectangleF drawRegion)
+    {
+        JSONCompound Compound = new();
+
+        Compound.Add(KEY_X, (double)drawRegion.X);
+        Compound.Add(KEY_Y, (double)drawRegion.Y);
+        Compound.Add(KEY_WIDTH, (double)drawRegion.Width);
+        Compound.Add(KEY_HEIGHT, (double)drawRegion.Height);
+
+        return Compound;
+    }
+
+    private JSONList CreateAnimationFrames(AssetPath[] paths)
+    {
+        JSONList List = new JSONList();
+
+        foreach (AssetPath TargetPath in paths)
+        {
+            List.Add(_pathConverter.WritePath(TargetPath));
+        }
+
+        return List;
+    }
+
 
     // Inherited methods.
     public override AssetDefinition ReadDefinition(string assetName, JSONCompound compound)
@@ -72,5 +96,17 @@ public class JSONAnimationConverter : JSONAssetDefinitionConverter
     public override void WriteDefinition(AssetDefinition definition, JSONCompound compound)
     {
         GHAnimationDefinition CastDefinition = (GHAnimationDefinition)definition;
+
+        compound.Add(KEY_FRAMES, CreateAnimationFrames(CastDefinition.Frames));
+        compound.Add(KEY_FPS, CastDefinition.FPS);
+        compound.Add(KEY_STEP, (long)CastDefinition.Step);
+
+        if (CastDefinition.DrawRegion.HasValue)
+        {
+            compound.Add(KEY_DRAW_REGION, CreateDrawRegion(CastDefinition.DrawRegion.Value));
+        }
+        
+        compound.Add(KEY_IS_LOOPED, CastDefinition.IsLooped);
+        compound.Add(KEY_IS_ANIMATED, CastDefinition.IsAnimated);
     }
 }
