@@ -30,7 +30,7 @@ public class GHAnimationDefinition : AssetDefinition
         RectangleF? drawRegion,
         bool isLooped,
         bool isAnimated)
-        : base(AssetType.Animation, name)
+        : base(AssetType.Animation, name, frames)
     {
         _frames = frames?.ToArray() ?? throw new ArgumentNullException(nameof(frames));
         FPS = fps;

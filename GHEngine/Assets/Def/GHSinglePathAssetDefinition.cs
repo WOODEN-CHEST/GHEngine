@@ -13,7 +13,8 @@ public abstract class GHSinglePathAssetDefinition : AssetDefinition
 
 
     // Constructors.
-    public GHSinglePathAssetDefinition(AssetType type, string name, AssetPath path) : base(type, name)
+    public GHSinglePathAssetDefinition(AssetType type, string name, AssetPath path) 
+        : base(type, name, new AssetPath[] { path })
     {
         TargetPath = path;
     }

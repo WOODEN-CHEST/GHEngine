@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets.Def;
 
-public interface IAssetDefinitionConverter
+public interface IAllAssetDefinitionConverter
 {
     void Read(IAssetDefinitionCollection definitions, string directoryPath);
     void Read(IAssetDefinitionCollection definitions, Stream dataStream);

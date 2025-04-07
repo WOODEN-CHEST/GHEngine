@@ -31,7 +31,7 @@ public class GHAssetDefinitionCollection : IAssetDefinitionCollection
     {
         ArgumentNullException.ThrowIfNull(definition, nameof(definition));
         EnsureTypeExistence(definition.Type);
-        _definitions[definition.Type].Add(definition.Name, definition);
+        _definitions[definition.Type][definition.Name] = definition;
     }
 
     public void Remove(AssetDefinition definition)

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Assets.Def;
 
-public class JSONAssetDefinitionReader : IAssetDefinitionConverter
+public class JSONAllAssetDefinitionConverter : IAllAssetDefinitionConverter
 {
     // Private static fields.
     private const string KEY_NAME = "name";
@@ -23,7 +23,7 @@ public class JSONAssetDefinitionReader : IAssetDefinitionConverter
 
 
     // Constructors.
-    public JSONAssetDefinitionReader(ILogger? logger = null)
+    public JSONAllAssetDefinitionConverter(ILogger? logger = null)
     {
         _logger = logger;
 
