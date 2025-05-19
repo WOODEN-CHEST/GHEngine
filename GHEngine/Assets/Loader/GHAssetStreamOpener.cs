@@ -8,28 +8,53 @@ public class GHAssetStreamOpener : IAssetStreamOpener
 {
     // Private fields.
     private readonly Dictionary<string, Stream> _memoryAssetStreams = new();
-    private readonly string _pathRoot;
+    private string[] _rootAssetPaths = Array.Empty<string>();
 
 
     // Constructors.
-    public GHAssetStreamOpener(string pathRoot)
+    public GHAssetStreamOpener() { }
+
+
+    // Methods.
+    public void SetAssetPaths(string[]? rootAssetPaths)
     {
-        _pathRoot = pathRoot ?? throw new ArgumentNullException(nameof(pathRoot));
+        lock (_memoryAssetStreams)
+        {
+            _rootAssetPaths = rootAssetPaths?.ToArray() ?? Array.Empty<string>();
+        }
     }
 
 
     // Private methods.
     private Stream OpenFileStream(string path)
     {
+        string? SelectedPath = SelectAssetPath(path);
+        if (SelectedPath == null)
+        {
+            throw new AssetLoadException($"No asset found for path {path}");
+        }
+
         try
         {
-            string FinalPath = Path.Combine(_pathRoot, path);
-            return File.OpenRead(FinalPath);
+            return File.OpenRead(SelectedPath);
         }
         catch (IOException e)
         {
             throw new AssetLoadException($"Failed to open path to file stream asset: {e}");
         }
+    }
+
+    private string? SelectAssetPath(string path)
+    {
+        foreach (string RootPath in _rootAssetPaths)
+        {
+            string FullPath = Path.Combine(RootPath, path);
+            if (File.Exists(FullPath))
+            {
+                return FullPath;
+            }
+        }
+        return null;
     }
 
     private Stream OpenMemoryStream(string path)
@@ -71,11 +96,19 @@ public class GHAssetStreamOpener : IAssetStreamOpener
         };
     }
 
-    public void RemoveMemoryStream(string path)
+    public void RemoveMemoryStream(string path, bool disposeStream)
     {
         ArgumentNullException.ThrowIfNull(path, nameof(path));
         string ModifiedPath = EnsurePathSeparators(path);
-        _memoryAssetStreams.Remove(ModifiedPath);
+        
+        if (_memoryAssetStreams.TryGetValue(ModifiedPath, out var TargetStream))
+        {
+            _memoryAssetStreams.Remove(ModifiedPath);
+            if (disposeStream)
+            {
+                TargetStream.Dispose();
+            }
+        }
     }
 
     public void SetMemoryStream(string path, Stream stream)
@@ -88,14 +121,6 @@ public class GHAssetStreamOpener : IAssetStreamOpener
 
     public bool DoesFileExist(string path)
     {
-        string FullPath = Path.Combine(_pathRoot, path);
-        try
-        {
-            return File.Exists(FullPath);
-        }
-        catch (IOException e)
-        {
-            throw new AssetLoadException("Exception while checking if file exists.", e);
-        }
+        return SelectAssetPath(path) != null;
     }
 }

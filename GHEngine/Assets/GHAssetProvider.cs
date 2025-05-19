@@ -7,12 +7,14 @@ using GHEngine.Translatable;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NAudio.Wave;
+using System.Xml.Linq;
 
 namespace GHEngine.Assets;
 
 public class GHAssetProvider : IAssetProvider
 {
     // Private fields.
+    private readonly object _lockObject = new();
     private readonly IAssetLoader _assetLoader;
     private readonly ILogger? _logger;
 
@@ -33,16 +35,45 @@ public class GHAssetProvider : IAssetProvider
     }
 
 
+    // Methods.
+    public void SetDefaultAsset(AssetType type, IDisposable asset)
+    {
+        lock (_defaultAssets)
+        {
+            _defaultAssets[type] = asset ?? throw new ArgumentNullException(nameof(asset));
+        }
+    }
+
+    public void RemoveDefaultAsset(AssetType type)
+    {
+        lock (_defaultAssets)
+        {
+            _defaultAssets.Remove(type);
+        }
+    }
+
+    public void ClearDefaultAssets(AssetType type)
+    {
+        lock (_defaultAssets)
+        {
+            _defaultAssets.Clear();
+        }
+    }
+
+
     // Private methods.
     private GHGameAsset? TryGetAsset(AssetType type, string name)
     {
-        if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
+        lock (_lockObject)
         {
-            return null;
-        }
+            if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
+            {
+                return null;
+            }
 
-        AssetDictionary.TryGetValue(name, out GHGameAsset? Asset);
-        return Asset;
+            AssetDictionary.TryGetValue(name, out GHGameAsset? Asset);
+            return Asset;
+        }
     }
 
     private IDisposable? TryLoadAsset(AssetType type, string name)
@@ -62,7 +93,7 @@ public class GHAssetProvider : IAssetProvider
         }
         catch (AssetLoadException e)
         {
-            _logger?.Warning(e.ToString());
+            _logger?.Warning($"Exception while loading asset: {e}");
             return DefaultAsset;
         }
     }
@@ -75,37 +106,39 @@ public class GHAssetProvider : IAssetProvider
             return null;
         }
 
-        if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
+        lock (_lockObject)
         {
-            AssetDictionary = new();
-            _assets.Add(type, AssetDictionary);
-        }
+            if (!_assets.TryGetValue(type, out var AssetDictionary))
+            {
+                AssetDictionary = new();
+                _assets.Add(type, AssetDictionary);
+            }
 
-        if (AssetDictionary.ContainsKey(name))
+            if (AssetDictionary.TryGetValue(name, out GHGameAsset? ExistingAsset))
+            {
+                _logger?.Error($"Attempted to add asset which already exists! (Type: \"{type.TypeName}\", Name:\"{name}\")" +
+                    $"Unloading old asset and replacing with new one.");
+                ExistingAsset.Value.Dispose();
+            }
+
+            GHGameAsset GameAsset = new(Asset, type, name);
+            AssetDictionary[name] = GameAsset;
+            return GameAsset;
+        }
+    }
+
+    private void ReleaseSingleAsset(object user, GHGameAsset asset, Dictionary<string, GHGameAsset> assetDict)
+    {
+        asset.RemoveUser(user);
+        if (asset.UserCount == 0)
         {
-            _logger?.Error($"Attempted to add asset which already exists! (Type: \"{type.TypeName}\", Name:\"{name}\")" +
-                $"Unloading old asset and replacing with new one.");
+            if (!_defaultAssets.ContainsValue(asset.Value))
+            {
+                asset.Value.Dispose();
+            }
+
+            assetDict.Remove(asset.Name);
         }
-        GHGameAsset GameAsset = new(Asset, type, name);
-        AssetDictionary[name] = GameAsset;
-        return GameAsset;
-    }
-
-
-    // Methods.
-    public void SetDefaultAsset(AssetType type, IDisposable asset)
-    {
-        _defaultAssets[type] = asset ?? throw new ArgumentNullException(nameof(asset));
-    }
-
-    public void RemoveDefaultAsset(AssetType type)
-    {
-        _defaultAssets.Remove(type);
-    }
-
-    public void ClearDefaultAssets(AssetType type)
-    {
-        _defaultAssets.Clear();
     }
 
 
@@ -125,52 +158,67 @@ public class GHAssetProvider : IAssetProvider
 
     public void ReleaseAllAssets()
     {
-        _assets.Clear();
+        lock (_lockObject)
+        {
+            foreach (GHGameAsset Asset in _assets.Values.SelectMany(dict => dict.Values))
+            {
+                if (!_defaultAssets.ContainsValue(Asset.Value))
+                {
+                    Asset.Value.Dispose();
+                }
+            }
+            _assets.Clear();
+        }
     }
 
     public void ReleaseAsset(object user, AssetType type, string name)
     {
-        if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
+        lock (_lockObject)
         {
-            return;
-        }
-
-        if (!AssetDictionary.TryGetValue(name, out GHGameAsset? GameAsset))
-        {
-            return;
-        }
-
-        GameAsset.RemoveUser(user);
-        if (GameAsset.UserCount == 0)
-        {
-            if (!_defaultAssets.Values.Contains(GameAsset.Value))
+            if (!_assets.TryGetValue(type, out Dictionary<string, GHGameAsset>? AssetDictionary))
             {
-                GameAsset.Value.Dispose();
+                return;
             }
 
-            AssetDictionary.Remove(name);
+            if (!AssetDictionary.TryGetValue(name, out GHGameAsset? GameAsset))
+            {
+                return;
+            }
+
+            ReleaseSingleAsset(user, GameAsset, AssetDictionary);
         }
     }
 
     public void ReleaseAsset(object user, object asset)
     {
-        foreach (GHGameAsset CurrentGameAsset in _assets.Values.SelectMany(assets => assets.Values))
+        lock (_lockObject)
         {
-            if (CurrentGameAsset.Value == asset)
+            foreach (var AssetDict in _assets.Values)
             {
-                ReleaseAsset(user, CurrentGameAsset.Type, CurrentGameAsset.Name);
-                break;
+                foreach (GHGameAsset GameAsset in AssetDict.Values)
+                {
+                    if (GameAsset.Value == asset)
+                    {
+                        ReleaseSingleAsset(user, GameAsset, AssetDict);
+                    }
+                }
             }
         }
     }
 
     public void ReleaseUserAssets(object user)
     {
-        foreach (GHGameAsset GameAsset in _assets.Values.SelectMany(assets => assets.Values))
+        lock (_lockObject)
         {
-            if (GameAsset.ContainsUser(user))
+            foreach (var AssetDict in _assets.Values)
             {
-                ReleaseAsset(user, GameAsset.Type, GameAsset.Name);
+                foreach (GHGameAsset GameAsset in AssetDict.Values)
+                {
+                    if (GameAsset.ContainsUser(user))
+                    {
+                        ReleaseSingleAsset(user, GameAsset, AssetDict);
+                    }
+                }
             }
         }
     }
@@ -180,9 +228,9 @@ public class GHAssetProvider : IAssetProvider
     private class GHGameAsset
     {
         // Fields.
-        internal IDisposable Value { get; }
-        internal AssetType Type { get; }
-        internal string Name { get; }
+        internal IDisposable Value { get; private init; }
+        internal AssetType Type { get; private init; }
+        internal string Name { get; private init; }
         internal int UserCount => _users.Count;
 
 
@@ -202,17 +250,26 @@ public class GHAssetProvider : IAssetProvider
         // Methods
         public void AddUser(object user)
         {
-            _users.Add(user);
+            lock (_users)
+            {
+                _users.Add(user);
+            }
         }
 
         public void RemoveUser(object user)
         {
-            _users.Remove(user);
+            lock (_users)
+            {
+                _users.Remove(user);
+            }
         }
 
         public bool ContainsUser(object user)
         {
-            return _users.Contains(user);
+            lock (_users)
+            {
+                return _users.Contains(user);
+            }
         }
     }
 }

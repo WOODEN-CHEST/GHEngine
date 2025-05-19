@@ -13,5 +13,5 @@ public interface IAssetStreamOpener
     Stream GetStream(AssetPath path);
     bool DoesFileExist(string path);
     void SetMemoryStream(string path, Stream stream);
-    void RemoveMemoryStream(string path);
+    void RemoveMemoryStream(string path, bool disposeStream);
 }

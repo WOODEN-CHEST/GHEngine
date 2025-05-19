@@ -64,7 +64,7 @@ public class GHLogger : ILogger
 
     public void Log(LogLevel level, string message)
     {
-        lock (this)
+        lock (_fileWriter)
         {
             ArgumentNullException.ThrowIfNullOrEmpty(message, nameof(message));
             LoggerLogEventArgs Args = new(level, message, DateTime.Now);

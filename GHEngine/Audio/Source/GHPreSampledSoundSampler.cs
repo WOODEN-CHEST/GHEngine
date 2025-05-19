@@ -27,7 +27,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
     {
         get
         {
-            lock (this)
+            lock (_lockObject)
             {
                 return _customSampleRate;
             }
@@ -49,7 +49,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
     {
         get
         {
-            lock (this)
+            lock (_lockObject)
             {
                 return _sampleSpeed;
             }
@@ -64,7 +64,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
     {
         get
         {
-            lock (this)
+            lock (_lockObject)
             {
                 return _volume;
             }
@@ -77,6 +77,7 @@ public class GHPreSampledSoundSampler : IPreSampledSoundSampler
 
 
     // Private fields.
+    private readonly object _lockObject = new();
     private float? _customSampleRate = null;
     private double _sampleSpeed = SAMPLE_SPEED_DEFAULT;
     private float _volume = VOLUME_DEFAULT;

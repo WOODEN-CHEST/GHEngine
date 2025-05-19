@@ -43,6 +43,7 @@ public class GHAudioEngine : IAudioEngine
 
 
     // Private static fields.
+    private readonly object _lockObject = new();
     private readonly WasapiOut _outputDevice;
 
     private float _volume = 1f;
@@ -165,7 +166,7 @@ public class GHAudioEngine : IAudioEngine
             EnsureBuffer(count);
             _sounds.ApplyChanges();
 
-            lock (this)
+            lock (_lockObject)
             {
                 _scheduledActions.ApplyChanges();
             }
@@ -204,7 +205,7 @@ public class GHAudioEngine : IAudioEngine
             return;
         }
 
-        lock (this)
+        lock (_lockObject)
         {
             foreach (Action ScheduledAction in actions)
             {
