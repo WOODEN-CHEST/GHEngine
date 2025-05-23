@@ -52,7 +52,6 @@ public class GHPreSampledSoundInstance : IPreSampledSoundInstance
     }
 
 
-
     // Private methods.
     private bool ApplyModifiers(float[] buffer, int sampleCount, WaveFormat format)
     {

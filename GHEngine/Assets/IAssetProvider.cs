@@ -9,13 +9,13 @@ namespace GHEngine.Assets;
 
 public interface IAssetProvider
 {
-    public T? GetAsset<T>(object user, AssetType type, string name) where T : class;
+    T? GetAsset<T>(object user, AssetType type, string name) where T : class;
 
-    public void ReleaseAsset(object user, AssetType type, string name);
+    void ReleaseAsset(object user, AssetType type, string name);
 
-    public void ReleaseAsset(object user, object asset);
+    void ReleaseAsset(object user, object asset);
 
-    public void ReleaseUserAssets(object user);
+    void ReleaseUserAssets(object user);
 
-    public void ReleaseAllAssets();
+    void ReleaseAllAssets();
 }

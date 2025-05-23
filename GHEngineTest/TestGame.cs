@@ -63,7 +63,8 @@ public class TestGame : Game
             _userInput.InputAreaRatio = (float)args.NewSize.X / (float)args.NewSize.Y;
         };
 
-        IAssetStreamOpener StreamOpener = new GHAssetStreamOpener(@"C:\Users\User\Desktop\test");
+        GHAssetStreamOpener StreamOpener = new GHAssetStreamOpener();
+        StreamOpener.SetAssetPaths(new string[] { @"C:\Users\User\Desktop\test" });
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
         {
             new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false),

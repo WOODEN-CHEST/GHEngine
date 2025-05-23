@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GHEngine.GameFont;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NAudio.Mixer;
 using System.Collections;
@@ -219,6 +220,25 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         return this;
     }
 
+    public void PrepareTexturesForRendering(IEnumerable<char> extraCharsToPrepare)
+    {
+        IEnumerable<char> CharsToPrepare = GetCharsToPrepare(extraCharsToPrepare);
+
+        foreach (DrawLine Line in DrawLines)
+        {
+            foreach (TextComponent Component in Line.Components)
+            {
+                GHFontProperties Properties = new(Component.FontSize,
+                    Component.IsBold,
+                    Component.IsItalic,
+                    Component.LineSpacing,
+                    Component.CharSpacing);
+
+                Component.FontFamily.LoadFontCharacters(Properties, CharsToPrepare);
+            }
+        }
+    }
+
 
     // Protected methods.
     protected virtual void OnDrawLinesUpdate(List<DrawLine> drawLines) { }
@@ -354,6 +374,18 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
 
     // Private methods.
+    private IEnumerable<char> GetCharsToPrepare(IEnumerable<char> extraChars)
+    {
+        HashSet<char> CharsToPrepare = new(extraChars);
+
+        foreach (char Character in Text)
+        {
+            CharsToPrepare.Add(Character);
+        }
+
+        return CharsToPrepare;
+    }
+
     private void EnsureCharacterCount()
     {
         if (_maxCharacters == int.MaxValue)
