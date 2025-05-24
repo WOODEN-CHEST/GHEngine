@@ -17,7 +17,7 @@ public class FontTextureCollection
 
     // Private fields.
     private readonly Dictionary<GHFontProperties, Dictionary<char, GHCharacterTexture>> _textures = new();
-    private readonly Queue<GHFontProperties> _fontsByAge = new();
+    private readonly List<GHFontProperties> _fontsByAge = new();
 
 
     // Methods.
@@ -81,7 +81,7 @@ public class FontTextureCollection
 
         TextureDict = new();
         _textures[properties] = TextureDict;
-        _fontsByAge.Enqueue(properties);
+        _fontsByAge.Add(properties);
         return TextureDict;
     }
 }
