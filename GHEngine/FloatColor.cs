@@ -70,9 +70,9 @@ public struct FloatColor
     public FloatColor(Color color)
     {
         R = (float)color.R / byte.MaxValue;   
-        G = (float)color.R / byte.MaxValue;   
-        B = (float)color.R / byte.MaxValue;   
-        A = (float)color.R / byte.MaxValue;   
+        G = (float)color.G / byte.MaxValue;   
+        B = (float)color.B / byte.MaxValue;   
+        A = (float)color.A / byte.MaxValue;   
     }
 
     public FloatColor(float r, float g, float b, float a)
