@@ -71,6 +71,7 @@ public class GHUserInput : IUserInput
     public readonly DeltaValue<Vector2> _virtualMousePosition = new();
     public readonly DeltaValue<Vector2> _actualMousePosition = new();
     public readonly DeltaValue<int> _mouseButtonsPressedCount = new();
+    private readonly DeltaValue<int> _mouseScrollPosition = new();
 
     private readonly GameWindow _window;
     private readonly Game _game;
@@ -117,6 +118,9 @@ public class GHUserInput : IUserInput
         if (_mouseState.Current.MiddleButton == ButtonState.Pressed) MouseButtonsPressed++;
         if (_mouseState.Current.RightButton == ButtonState.Pressed) MouseButtonsPressed++;
         _mouseButtonsPressedCount.SetValue(MouseButtonsPressed);
+
+        _mouseScrollPosition.SetValue(_mouseState.Current.ScrollWheelValue);
+        MouseScrollChangeAmount = _mouseScrollPosition.Current - _mouseScrollPosition.Previous;
     }
 
     private bool AreKeysInState(Keys[] keys, KeyState keyState, KeyboardState keyboardState)

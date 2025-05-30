@@ -27,6 +27,9 @@ public class GHRenderer : IFrameRenderer
     public int DrawCallsRectangle { get; private set; }
     public int RenderTargetSwitchCount { get; private set; }
     public int SpriteBatchBeginCount { get; private set; }
+    public BlendState RenderBlendState { get; set; } = BlendState.NonPremultiplied;
+    public DepthStencilState RenderDepthStencilState { get; set; } = DepthStencilState.None;
+    public RasterizerState RenderRasterizerState { get; set; } = RasterizerState.CullCounterClockwise;
 
 
     // Private fields.
@@ -44,6 +47,8 @@ public class GHRenderer : IFrameRenderer
     private float _aspectRatio;
 
     private readonly SamplerState _defaultSamplerState = SamplerState.LinearWrap;
+
+
 
 
 
@@ -91,7 +96,7 @@ public class GHRenderer : IFrameRenderer
         }
 
         Vector2 WindowSize = (Vector2)_display.CurrentWindowSize;
-        BeginSpriteBatch(layer.Shader, layer.CustomSamplerState);
+        BeginSpriteBatch(layer.Shader, layer.CustomSamplerState, RenderBlendState);
         _spriteBatch.Draw(_layerRenderTarget,
             layer.Position * WindowSize, 
             GetBoundsRectangle(layer.DrawBounds, (Vector2)_display.CurrentWindowSize),
@@ -115,15 +120,15 @@ public class GHRenderer : IFrameRenderer
         }
 
         Vector2 WindowSize = (Vector2)_display.CurrentWindowSize;
-        BeginSpriteBatch(frame.Shader, frame.CustomSamplerState);
+        BeginSpriteBatch(frame.Shader, frame.CustomSamplerState, RenderBlendState);
         _spriteBatch.Draw(_frameRenderTarget,
-        frame.Position * WindowSize,
-        GetBoundsRectangle(frame.DrawBounds, (Vector2)_display.CurrentWindowSize),
-        new GenericColorMask(frame.Mask, frame.Brightness, frame.Opacity).CombinedMask,
-        frame.Rotation,
-        frame.Origin * WindowSize,
-        frame.Size,
-        frame.Effects,
+            frame.Position * WindowSize,
+            GetBoundsRectangle(frame.DrawBounds, (Vector2)_display.CurrentWindowSize),
+            new GenericColorMask(frame.Mask, frame.Brightness, frame.Opacity).CombinedMask,
+            frame.Rotation,
+            frame.Origin * WindowSize,
+            frame.Size,
+            frame.Effects,
             LAYER_DEPTH);
         _spriteBatch.End();
         RenderTargetSwitchCount++;
@@ -147,13 +152,13 @@ public class GHRenderer : IFrameRenderer
         _aspectRatio = (float)_display.CurrentWindowSize.X / (float)_display.CurrentWindowSize.Y;
     }
 
-    private void BeginSpriteBatch(SpriteEffect? shader, SamplerState? sampler)
+    private void BeginSpriteBatch(SpriteEffect? shader, SamplerState? sampler, BlendState blendState)
     {
         SpriteBatchBeginCount++;
         _currentShader = shader;
         _currentState = sampler ?? _defaultSamplerState;
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, _currentState,
-            DepthStencilState.None, RasterizerState.CullCounterClockwise, _currentShader, null);
+        _spriteBatch.Begin(SpriteSortMode.Deferred, blendState, _currentState,
+            RenderDepthStencilState, RenderRasterizerState, _currentShader, null);
     }
 
     private void EnsurePropertiesForDrawCall(SpriteEffect? shader, SamplerState? sampler)
@@ -162,7 +167,7 @@ public class GHRenderer : IFrameRenderer
         {
             _spriteBatch.End();
             _currentShader = shader;
-            BeginSpriteBatch(_currentShader, sampler);
+            BeginSpriteBatch(_currentShader, sampler, RenderBlendState);
         }
     }
 
@@ -410,11 +415,11 @@ public class GHRenderer : IFrameRenderer
             RenderTargetSwitchCount++;
             _graphicsDevice.SetRenderTarget(_layerRenderTarget);
             _graphicsDevice.Clear(Color.Transparent);
-            BeginSpriteBatch(null, _defaultSamplerState);
+            BeginSpriteBatch(null, _defaultSamplerState, RenderBlendState);
             Layer.Render(this, time);
             _spriteBatch.End();
 
-            RenderLayerOnFrame(Layer, i == 0 ? Color.Transparent : null);
+            RenderLayerOnFrame(Layer, i == 0 ? ScreenColor : null);
         }
 
         RenderFrameOnScreen(frameToDraw);

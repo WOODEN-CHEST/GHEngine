@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,9 @@ namespace GHEngine.Frame;
 public interface IFrameRenderer : IRenderer
 {
     // Fields.
+    BlendState RenderBlendState { get; set; }
+    DepthStencilState RenderDepthStencilState { get; set; }
+    RasterizerState RenderRasterizerState { get; set; }
     Color? ScreenColor { get; set; }
     int DrawCallsTotal { get; }
     int DrawCallsSprite { get; }

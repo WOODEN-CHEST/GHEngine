@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace Tests.Audio;
+namespace GHEngine.Audio;
 
 public enum SoundInstanceState
 {
