@@ -569,7 +569,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
             foreach (TextComponent Component in Line.Components)
             {
                 Vector2 ExpectedPosition = GetDrawPosition(_drawLines, Line, Component);
-
+                Vector2 
                 Vector2 RelativeComponentOrigin = (RelativeOriginCenter + Position - ExpectedPosition) / Component.DrawSize;
                 GenericColorMask ColorMask = new()
                 {

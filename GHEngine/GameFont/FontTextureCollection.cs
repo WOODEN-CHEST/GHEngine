@@ -10,14 +10,8 @@ namespace GHEngine.GameFont;
 
 public class FontTextureCollection
 {
-    // Fields.
-    public int FontCount => _fontsByAge.Count;
-    public IEnumerable<GHFontProperties> SupportedProperties => _fontsByAge;
-
-
     // Private fields.
     private readonly Dictionary<GHFontProperties, Dictionary<char, GHCharacterTexture>> _textures = new();
-    private readonly List<GHFontProperties> _fontsByAge = new();
 
 
     // Methods.
@@ -81,7 +75,6 @@ public class FontTextureCollection
 
         TextureDict = new();
         _textures[properties] = TextureDict;
-        _fontsByAge.Add(properties);
         return TextureDict;
     }
 }

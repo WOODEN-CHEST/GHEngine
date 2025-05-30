@@ -14,14 +14,11 @@ namespace GHEngine.GameFont;
 public class GHFontFamily : IDisposable
 {
     // Static fields.
-    public const char REFERENCE_CHAR = 'A';
     public const float DEFAULT_SIZE = 1f;
 
 
     // Fields.
-    public string FamilyName { get; private init; }
     public string Name { get; private init; }
-    public char[] SupportedCharacters { get; }
     public int LoadedFontCount => _fonts.Count;
 
 
@@ -31,6 +28,7 @@ public class GHFontFamily : IDisposable
 
     private readonly FontTextureCollection _fontTextures = new();
     private readonly Dictionary<GHFontProperties, Font> _fonts = new();
+    private readonly List<GHFontProperties> _fontPropertiesByAge = new();
 
 
     // Constructors.
@@ -38,6 +36,7 @@ public class GHFontFamily : IDisposable
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         _family = family;
+        Name = family.Name;
     }
 
 
@@ -53,6 +52,7 @@ public class GHFontFamily : IDisposable
 
         Font CreatedFont = _family.CreateFont(properties.Size, BoldStyle | ItalicStyle);
         _fonts.Add(properties, CreatedFont);
+        _fontPropertiesByAge.Add(properties);
         return CreatedFont;
     }
 
@@ -189,8 +189,8 @@ public class GHFontFamily : IDisposable
 
     public void ClearOldFonts(int fontsToRemain)
     {
-        GHFontProperties[] CurrentFonts = _fontTextures.SupportedProperties.ToArray();
-        for (int i = 0; i < _fontTextures.FontCount - fontsToRemain; i++)
+        GHFontProperties[] CurrentFonts = _fontPropertiesByAge.ToArray();
+        for (int i = 0; i < CurrentFonts.Length - fontsToRemain; i++)
         {
             GHFontProperties Properties = CurrentFonts[i];
             foreach (GHCharacterTexture CharTexture in _fontTextures.GetTexturesOfFont(Properties))
@@ -199,6 +199,7 @@ public class GHFontFamily : IDisposable
             }
             _fontTextures.ClearTextures(Properties);
             _fonts.Remove(Properties);
+            _fontPropertiesByAge.Remove(Properties);
         }
     }
 
@@ -225,7 +226,7 @@ public class GHFontFamily : IDisposable
 
     public void LoadFullFont(GHFontProperties properties)
     {
-        for (char Character = (char)0; Character < char.MaxValue; Character++)
+        for (char Character = char.MinValue; Character < char.MaxValue; Character++)
         {
             GetCharTexture(Character, properties);
         }
