@@ -486,6 +486,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         List<DrawLine> NewDrawLines = GetRawDrawLineList();
         EnsureDrawLineSize(NewDrawLines);
         OnDrawLinesUpdate(NewDrawLines);
+        _cachedDrawSize = null;
         _drawLines = NewDrawLines.ToArray();
     }
 
@@ -572,9 +573,9 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
                 Vector2 RelativeComponentOrigin = (RelativeOriginCenter + Position - ExpectedPosition) / Component.DrawSize;
                 GenericColorMask ColorMask = new()
                 {
-                    Mask = Component.Mask,
-                    Brightness = Component.Brightness,
-                    Opacity = Component.Opacity
+                    Mask = Component.Mask * Mask,
+                    Brightness = Component.Brightness * Brightness,
+                    Opacity = Component.Opacity * Opacity
                 };
 
                 FontRenderProperties Properties = new(Component.FontFamily, Component.IsBold,

@@ -110,13 +110,18 @@ public class GHRenderer : IFrameRenderer
         RenderTargetSwitchCount++;
     }
 
-    private void RenderFrameOnScreen(IGameFrame frame)
+    private void RenderFrameOnScreen(IGameFrame frame, bool shouldRender)
     {
         _graphicsDevice.SetRenderTarget(null);
 
         if (ScreenColor != null)
         {
             _graphicsDevice.Clear(ScreenColor.Value);
+        }
+
+        if (!shouldRender)
+        {
+            return;
         }
 
         Vector2 WindowSize = (Vector2)_display.CurrentWindowSize;
@@ -396,14 +401,8 @@ public class GHRenderer : IFrameRenderer
     {
         ResetStatistics();
 
-        if (frameToDraw.LayerCount == 0)
-        {
-            _graphicsDevice.SetRenderTarget(null);
-            _graphicsDevice.Clear(Color.Black);
-            return;
-        }
-
         ILayer[] Layers = frameToDraw.Layers;
+        bool IsFrameLayerCleared = true;
         for (int i = 0; i < Layers.Length; i++)
         {
             ILayer Layer = Layers[i];
@@ -419,10 +418,11 @@ public class GHRenderer : IFrameRenderer
             Layer.Render(this, time);
             _spriteBatch.End();
 
-            RenderLayerOnFrame(Layer, i == 0 ? ScreenColor : null);
+            RenderLayerOnFrame(Layer, IsFrameLayerCleared ? ScreenColor : null);
+            IsFrameLayerCleared = false;
         }
 
-        RenderFrameOnScreen(frameToDraw);
+        RenderFrameOnScreen(frameToDraw, !IsFrameLayerCleared);
     }
 
     public void Dispose()
