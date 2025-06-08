@@ -87,26 +87,31 @@ public class ZIndexedCollection<T> : IEnumerable<T>
 
 
     // Private methods.
-    private int FindIndexWithNearestLowerZIndex(float zindex)
+    private int FindIndexWithNearestLowerZIndex(float zIndex)
     {
-        int Index = _items.Count / 2;
-        int Step = _items.Count / 2;
+        int IndexMax = _items.Count - 1;
+        int IndexMin = 0;
 
-        while (Step != 0)
+        while (IndexMin <= IndexMax)
         {
-            if (_items[Index].Index < zindex)
+            int IndexMiddle = IndexMin + ((IndexMax - IndexMin) / 2);
+
+            float ZIndexInMiddle = _items[IndexMiddle].Index;
+            if (ZIndexInMiddle == zIndex)
             {
-                Index += Step;
+                return IndexMiddle;
+            }
+            else if (ZIndexInMiddle > zIndex)
+            {
+                IndexMax = IndexMiddle - 1;
             }
             else
             {
-                Index -= Step;
+                IndexMin = IndexMiddle + 1;
             }
-
-            Step /= 2;
         }
 
-        return Index;
+        return IndexMin;
     }
 
     public IEnumerator<T> GetEnumerator()
@@ -136,6 +141,13 @@ public class ZIndexedCollection<T> : IEnumerable<T>
         {
             Item = item ?? throw new ArgumentNullException(nameof(item));
             Index = index;
+        }
+
+
+        // Methods.
+        public override string ToString()
+        {
+            return $"Item \"{Item?.ToString() ?? "null"}\" (${Index})";
         }
     }
 }

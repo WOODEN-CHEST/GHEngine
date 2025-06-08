@@ -44,7 +44,7 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
         set => _colorMask.Mask = value;
     }
 
-    public bool IsVisible { get; set; }
+    public bool IsVisible { get; set; } = true;
     public SpriteEffect? Shader { get; set; }
 
     public SamplerState? TargetSampleState { get; set; } = null;
@@ -95,6 +95,11 @@ public class SpriteItem : IColorMaskable, IRenderableItem, ITimeUpdatable, IShad
     // Inherited methods.
     public void Render(IRenderer renderer, IProgramTime time)
     {
+        if (!IsVisible)
+        {
+            return;
+        }
+
         Vector2 DrawPosition = IsPositionAdjusted ? GetAdjustedPosition(renderer.AspectRatio) : Position;
         Vector2 DrawSize = IsSizeAdjusted ? GetAdjustedDrawSize(renderer.AspectRatio) : Size;
 

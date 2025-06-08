@@ -72,7 +72,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         set
         {
             _maxCharacters = Math.Max(0, value);
-            EnsureCharacterCount();
+            EnsureTextLimits();
         }
     }
 
@@ -84,7 +84,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
             _allowNewlines = value;
             if (!value)
             {
-                EnsureNoNewlines();
+                EnsureTextLimits();
             }
         }
     }
@@ -166,6 +166,8 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     private bool _isSplittingAllowed = true;
 
     private string? _cachedText = null;
+
+    private bool _isTextUpdateSuppressed = false;
 
 
     // Constructors.
@@ -393,6 +395,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
             return;
         }
 
+        _isTextUpdateSuppressed = true;
         int Characters = 0;
         int ComponentIndex;
         for (ComponentIndex = 0; (ComponentIndex < _components.Count) && (Characters < _maxCharacters); ComponentIndex++)
@@ -409,14 +412,17 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         {
             _components.RemoveRange(ComponentIndex, _components.Count - ComponentIndex);
         }
+        _isTextUpdateSuppressed = false;
     }
 
     private void EnsureNoNewlines()
     {
+        _isTextUpdateSuppressed = true;
         foreach (TextComponent Component in _components)
         {
             Component.Text = Component.Text.Replace("\n", "");
         }
+        _isTextUpdateSuppressed = false;
     }
 
     private void CacheText()
@@ -495,6 +501,17 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         _cachedText = null;
         _drawLines = null;
         _cachedDrawSize = null;
+
+        if (_isTextUpdateSuppressed)
+        {
+            return;
+        }
+
+        EnsureTextLimits();
+    }
+
+    private void EnsureTextLimits()
+    {
         if (!IsNewlineAllowed)
         {
             EnsureNoNewlines();
@@ -557,6 +574,11 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
     // Inherited methods.
     public virtual void Render(IRenderer renderer, IProgramTime time)
     {
+        if (!IsVisible)
+        {
+            return;
+        }
+
         if (_drawLines == null)
         {
             UpdateDrawLines();
