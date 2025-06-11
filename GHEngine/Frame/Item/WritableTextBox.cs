@@ -55,7 +55,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         get => _cursor.IndexMax;
         set => _cursor.IndexMax = value;
     }
-
     public bool IsPastingAllowed { get; set; } = true;
     public bool IsCopyingAllowed { get; set; } = true;
     public bool IsCuttingAllowed { get; set; } = true;
@@ -189,7 +188,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             || (_cursor.IndexTargetMax == null)
             || (curAspectRatio != _cursor.BlinkerCacheAspectRatio);
     }
-
 
     private void EnsureBlinkerRenderCache(float aspectRatio)
     {
@@ -348,7 +346,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
     private void UpdateCursor(IProgramTime time)
     {
-
         bool WasLeftClickPressed = _userInput.WereMouseButtonsJustPressed(MouseButton.Left);
         Vector2 MousePosition = _userInput.VirtualMousePositionCurrent;
 
@@ -450,25 +447,27 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         return false;
     }
 
+    private bool AreControlKeysDown()
+    {
+        return _userInput.AreKeysDown(Keys.LeftControl) || _userInput.AreKeysDown(Keys.RightControl);
+    }
+
     private bool NavigateKeyboardTimed(IProgramTime time)
     {
         Action? TargetAction = null;
 
-        if (_userInput.AreKeysDown(Keys.Right))
+        if (_userInput.AreKeysDown(Keys.Right) || _userInput.AreKeysDown(Keys.Left))
         {
-            TargetAction = () => MoveSingleCursor(1);
+            TargetAction = () =>
+            {
+                int Step = _userInput.AreKeysDown(Keys.Left) ? -1 : 1;
+                int StepCount = AreControlKeysDown() ? (GetWordEndIndex(Step) - _cursor.IndexMax) : Step;
+                MoveSingleCursor(StepCount);
+            };
         }
-        if (_userInput.AreKeysDown(Keys.Left))
+        if (_userInput.AreKeysDown(Keys.Up) || _userInput.AreKeysDown(Keys.Down))
         {
-            TargetAction = () => MoveSingleCursor(-1);
-        }
-        if (_userInput.AreKeysDown(Keys.Up))
-        {
-
-        }
-        if (_userInput.AreKeysDown(Keys.Down))
-        {
-
+            // TODO: Implement vertical navigation.
         }
 
         if (TargetAction != null)
@@ -511,6 +510,39 @@ public class WritableTextBox : TextBox, ITimeUpdatable
             _navigationDelayType = NavigationDelayType.NoDelay;
             _navigationDelaySeconds = 0d;
         }
+    }
+
+    private int GetWordEndIndex(int step)
+    {
+        if ((Length == 0) || ((_cursor.IndexMax >= Length) && (step > 0)))
+        {
+            return _cursor.IndexMax;
+        }
+
+        int Index = _cursor.IndexMax;
+
+        if (step < 0)
+        {
+            Index = Math.Max(0, Index - 1);
+        }
+
+        bool IsWordWhitespace = char.IsWhiteSpace(Text[Index]);
+        while ((Index >= 0) && (Index < Length))
+        {
+            bool IsLetterWhitespace = char.IsWhiteSpace(Text[Index]);
+            if (IsWordWhitespace != IsLetterWhitespace)
+            {
+                break;
+            }
+            Index += step;
+        }
+
+        if (step < 0)
+        {
+            Index++;
+        }
+
+        return Math.Clamp(Index, 0, Length);
     }
 
     /* Typing. */
@@ -559,6 +591,34 @@ public class WritableTextBox : TextBox, ITimeUpdatable
         ResetBlinkTimer();
     }
 
+    private void OnBackPress()
+    {
+        if (AreControlKeysDown())
+        {
+            int EndIndex = GetWordEndIndex(-1);
+            int Steps = EndIndex - _cursor.IndexMax;
+            DeleteText(EndIndex, _cursor.IndexMax, Steps);
+        }
+        else
+        {
+            DeleteText(_cursor.IndexMin - 1, _cursor.IndexMax, -1);
+        }
+    }
+
+    private void OnDeletePress()
+    {
+        if (AreControlKeysDown())
+        {
+            int EndIndex = GetWordEndIndex(1);
+            int Steps = EndIndex - _cursor.IndexMax;
+            DeleteText(_cursor.IndexMax, EndIndex, Steps);
+        }
+        else
+        {
+            DeleteText(_cursor.IndexMin, _cursor.IndexMax + 1, 0);
+        }
+    }
+
     private void ExecuteKeyPress(char character, Keys key)
     {
         if (IsSelectionMade)
@@ -568,11 +628,11 @@ public class WritableTextBox : TextBox, ITimeUpdatable
 
         if (key == Keys.Back)
         {
-            DeleteText(_cursor.IndexMin - 1, _cursor.IndexMax, -1);
+            OnBackPress();
         }
         else if (key == Keys.Delete)
         {
-            DeleteText(_cursor.IndexMin, _cursor.IndexMax + 1, 0);
+            OnDeletePress();
         }
         else if (key == Keys.Enter)
         {
@@ -618,7 +678,6 @@ public class WritableTextBox : TextBox, ITimeUpdatable
     {
         // Fields.
         public int IndexMin { get; set; }
-
         public int IndexMax { get; set; }
         public CursorTarget? IndexTargetMin { get; set; }
         public CursorTarget? IndexTargetMax { get; set; }

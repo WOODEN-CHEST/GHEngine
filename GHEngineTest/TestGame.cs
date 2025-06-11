@@ -12,6 +12,7 @@ using GHEngine.IO;
 using GHEngine.Screen;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace GHEngineTest;
 
@@ -108,6 +109,8 @@ public class TestGame : Game
         _mainFrame.Layers[0].AddItem(Text);
         _updatables.Add(Text);
         //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
+
+        _display.FullScreenSize = _display.ScreenSize;
     }
 
     protected override void BeginRun()
@@ -130,7 +133,10 @@ public class TestGame : Game
 
         //_textBox.Rotation += (float)_time.PassedTime.TotalSeconds;
 
-
+        if (_userInput.WereKeysJustPressed(Keys.F11))
+        {
+            _display.IsFullScreen = !_display.IsFullScreen;
+        }
 
 
         foreach (ITimeUpdatable Updatable in _updatables)
