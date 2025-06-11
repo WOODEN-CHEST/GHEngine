@@ -105,6 +105,7 @@ public class TestGame : Game
 
         Text.Rotation = MathF.PI / 4f * 0f;
         Text.IsFocusedBasedOnClicks = true;
+        Text.DrawBounds = new(0.1f, 0.1f, 0.8f, 1f);
 
         _mainFrame.Layers[0].AddItem(Text);
         _updatables.Add(Text);

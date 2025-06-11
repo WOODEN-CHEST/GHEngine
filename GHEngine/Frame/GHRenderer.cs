@@ -49,9 +49,6 @@ public class GHRenderer : IFrameRenderer
     private readonly SamplerState _defaultSamplerState = SamplerState.LinearWrap;
 
 
-
-
-
     // Constructors.
     private GHRenderer(GraphicsDevice device, IDisplay display)
     {
@@ -282,7 +279,7 @@ public class GHRenderer : IFrameRenderer
             MathF.Atan2(Change.Y, Change.X * AspectRatio),
             new Vector2(0f, 0.5f),
             new Vector2((ToWindowPosition(endPoint) - ToWindowPosition(startPoint)).Length(),
-            width * Math.Min(_display.WindowedSize.X, _display.WindowedSize.Y)),
+            width * Math.Min(_display.CurrentWindowSize.X, _display.CurrentWindowSize.Y)),
             SpriteEffects.None,
             LAYER_DEPTH);
         DrawCallsLine++;
