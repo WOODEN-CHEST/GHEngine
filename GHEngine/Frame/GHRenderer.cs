@@ -207,20 +207,29 @@ public class GHRenderer : IFrameRenderer
             return (null, Vector2.Zero);
         }
 
-        float MinX = Math.Max(0f, fullDrawBounds.Value.X * size.X + position.X - relativeCharPosition.X
-            - (origin.X * size.X)) * _display.CurrentWindowSize.X / textureScaling.X;
-        float MinY = Math.Max(0f, fullDrawBounds.Value.Y * size.Y + position.Y - relativeCharPosition.Y
-            - (origin.Y * size.Y)) * _display.CurrentWindowSize.Y / textureScaling.Y;
-        float MaxX = Math.Max(0f, fullDrawBounds.Value.Width * size.X + position.X - relativeCharPosition.X
-            - (origin.X * size.X)) * _display.CurrentWindowSize.X / textureScaling.X;
-        float MaxY = Math.Max(0f, fullDrawBounds.Value.Height * size.Y + position.Y - relativeCharPosition.Y
-            - (origin.Y * size.Y))  * _display.CurrentWindowSize.Y / textureScaling.Y;
+        Vector2 BoundsSize = size * new Vector2(fullDrawBounds.Value.Width, fullDrawBounds.Value.Height);
+        Vector2 BoundsTopLeft = position 
+            - (origin * size)
+            + (new Vector2(fullDrawBounds.Value.X, fullDrawBounds.Value.Y) * size);
+        Vector2 BoundsBottomRight = BoundsTopLeft + BoundsSize;
 
-        float Width = Math.Max(Math.Min(MaxX - MinX, charTextureSize.X - MinX), 0f);
-        float Height = Math.Max(Math.Min(MaxY - MinY, charTextureSize.Y- MinY), 0f);
+        Vector2 TextureScaleFactor = (Vector2)_display.CurrentWindowSize / textureScaling;
 
-        return (new Rectangle((int)MinX, (int)MinY, (int)Width, (int)Height),  
-            new Vector2(MinX * textureScaling.X, MinY * textureScaling.Y));
+        float MinX = (BoundsTopLeft.X - relativeCharPosition.X) * TextureScaleFactor.X;
+        float MinY = (BoundsTopLeft.Y - relativeCharPosition.Y)  * TextureScaleFactor.Y;
+        float MaxX = MinX + (BoundsSize.X * TextureScaleFactor.X);
+        float MaxY = MinY + (BoundsSize.Y * TextureScaleFactor.Y);
+
+        float MinXClamped = Math.Max(0f, MinX);
+        float MinYClamped = Math.Max(0f, MinY);
+        float MaxXClamped = Math.Max(0f, MaxX);
+        float MaxYClamped = Math.Max(0f, MaxY);
+
+        float Width = Math.Max(Math.Min(MaxXClamped - MinXClamped, charTextureSize.X - MinXClamped), 0f);
+        float Height = Math.Max(Math.Min(MaxYClamped - MinYClamped, charTextureSize.Y - MinYClamped), 0f);
+
+        return (new Rectangle((int)MinXClamped, (int)MinYClamped, (int)Width, (int)Height),
+            new Vector2(MinXClamped, MinYClamped) * textureScaling);
     }
 
     private void ResetStatistics()
@@ -298,7 +307,7 @@ public class GHRenderer : IFrameRenderer
         SamplerState? state,
         Vector2? precomputedRelativeSize)
     {
-        if (string.IsNullOrEmpty(text))
+        if (string.IsNullOrEmpty(text) || ((bounds != null) && ((bounds.Value.Width <= 0f) || (bounds.Value.Height <= 0f))))
         {
             return;
         }
@@ -337,21 +346,25 @@ public class GHRenderer : IFrameRenderer
                 + (new Vector2(-CharTexture.OffsetFromLeftPixels, CharTexture.OffsetFromTopPixels)
                 / new Vector2(AbsoluteFontSize) * ScalingPerUnit);
 
+            if (i == 27)
+            { }
+
             (Rectangle? CharDrawBounds, Vector2 BoundsOffset) = GetCharDrawBounds(bounds, position,
-                FinalRelativeCharPositionInScreen, new Vector2(CharTexture.Texture.Width, CharTexture.Texture.Height), 
+                FinalRelativeCharPositionInScreen, 
+                new Vector2(CharTexture.Texture.Width, CharTexture.Texture.Height), 
                 size, TextureScaling, origin);
 
-            if (CharDrawBounds.HasValue && (CharDrawBounds.Value.Width == 0 || CharDrawBounds.Value.Height == 0))
+            if (CharDrawBounds.HasValue && (CharDrawBounds.Value.Width <= 0 || CharDrawBounds.Value.Height <= 0))
             {
+                RelativeCharPositionInScreen.X += CharTexture.RelativeAdvance * ScalingPerUnit.X;
                 continue;
             }
             Vector2 ToOriginVectorRelative = position - FinalRelativeCharPositionInScreen;
-            Vector2 ToOriginVectorWindowAbsolute = ToOriginVectorRelative * (Vector2)_display.CurrentWindowSize - BoundsOffset;
+            Vector2 ToOriginVectorWindowAbsolute = ToOriginVectorRelative * (Vector2)_display.CurrentWindowSize;
             Vector2 ToOriginVectorSpriteAbsolute = ToOriginVectorWindowAbsolute / new Vector2(TextureScaling.X, TextureScaling.Y);
 
             _spriteBatch.Draw(CharTexture.Texture,
-                ToWindowPosition(FinalRelativeCharPositionInScreen) + BoundsOffset
-                + ToOriginVectorWindowAbsolute,
+                ToWindowPosition(FinalRelativeCharPositionInScreen) + BoundsOffset + ToOriginVectorWindowAbsolute,
                 CharDrawBounds,
                 mask,
                 rotation,

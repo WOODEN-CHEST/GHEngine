@@ -26,6 +26,8 @@ public class TestGame : Game
     private IGameFrame _mainFrame;
     private readonly IModifiableProgramTime _time = new GenericProgramTime();
     private readonly HashSet<ITimeUpdatable> _updatables = new();
+    private TextBox _text;
+    private GHFontFamily _font;
 
 
     // Constructors.
@@ -88,7 +90,7 @@ public class TestGame : Game
 
         WritableTextBox Text = new(_userInput)
         {
-            new TextComponent(FontFamily1, "Hello World!")
+            new TextComponent(FontFamily1, "Hello World!\nHello World 2\nHello World 3")
             {
                 FontSize = 0.25f,
                 Mask = Color.Red,
@@ -108,10 +110,14 @@ public class TestGame : Game
         Text.DrawBounds = new(0.1f, 0.1f, 0.8f, 1f);
 
         _mainFrame.Layers[0].AddItem(Text);
+        //_mainFrame.Layers[0].AddItem(new TestStringBox() { Font = FontFamily1, Input = _userInput });
         _updatables.Add(Text);
         //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
 
         _display.FullScreenSize = _display.ScreenSize;
+
+        _text = Text;
+        _font = FontFamily1;
     }
 
     protected override void BeginRun()
@@ -138,7 +144,14 @@ public class TestGame : Game
         {
             _display.IsFullScreen = !_display.IsFullScreen;
         }
-
+        //if (_userInput.WereKeysJustPressed(Keys.Up))
+        //{
+        //    _text.Components.First().Text = "Hello World!\nHello World 2";
+        //}
+        //if (_userInput.WereKeysJustPressed(Keys.Down))
+        //{
+        //    _text.Components.First().Text = "Hello World!\nHello World 2,\nHello";
+        //}
 
         foreach (ITimeUpdatable Updatable in _updatables)
         {
@@ -150,6 +163,9 @@ public class TestGame : Game
     {
         _renderer.RenderFrame(_mainFrame, _time);
         //((TextBox)_mainFrame.TopLayer!.Items[0]).Rotation = (float)gameTime.TotalGameTime.TotalSeconds;
+
+        
+
         base.Draw(gameTime);
     }
 
@@ -165,6 +181,39 @@ public class TestGame : Game
 
             renderer.DrawString(new(Family, false, false, 0f, 0f), "Hello World!", new Vector2(0.5f), null,
                 Color.Wheat, Rotation, new Vector2(0.5f), new(0.25f), SpriteEffects.None, null, null, null);
+        }
+    }
+
+    private class TestStringBox : IRenderableItem
+    {
+        public required GHFontFamily Font { get; init; }
+        public bool IsVisible { get; set; } = true;
+        float Bounds = 0.0f;
+        public required IUserInput Input { get; init; }
+
+        public void Render(IRenderer renderer, IProgramTime time)
+        {
+            if (Input.WereKeysJustPressed(Keys.Up))
+            {
+                Bounds += 0.025f;
+            }
+            if (Input.WereKeysJustPressed(Keys.Down))
+            {
+                Bounds -= 0.025f;
+            }
+
+            renderer.DrawString(new(Font, false, false, 0f, 0f),
+                "Hello World!\nHello World 2\nHello",
+                new(0.0f, 0.0f),
+                new(Bounds, 0.1f, 0.8f, 0.8f),
+                Color.White,
+                0f,
+                new(0.5f, 0.5f),
+                new(0.5f, 0.5f),
+                SpriteEffects.None,
+                null,
+                null,
+                null);
         }
     }
 }
