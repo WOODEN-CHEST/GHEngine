@@ -90,7 +90,7 @@ public class TestGame : Game
 
         WritableTextBox Text = new(_userInput)
         {
-            new TextComponent(FontFamily1, "Hello World!\nHello World 2\nHello World 3")
+            new TextComponent(FontFamily1, "Hello World!\nHelloj World 2\nHello World 3")
             {
                 FontSize = 0.25f,
                 Mask = Color.Red,
@@ -203,12 +203,12 @@ public class TestGame : Game
             }
 
             renderer.DrawString(new(Font, false, false, 0f, 0f),
-                "Hello World!\nHello World 2\nHello",
+                "Hello World!\nHelloj World 2\nHello",
                 new(0.0f, 0.0f),
                 new(Bounds, 0.1f, 0.8f, 0.8f),
                 Color.White,
                 0f,
-                new(0.5f, 0.5f),
+                new(0.0f, 0.0f),
                 new(0.5f, 0.5f),
                 SpriteEffects.None,
                 null,

@@ -567,7 +567,7 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
         float X = Math.Clamp((RelativeBoundsMin.X - drawPosition.X) / component.DrawSize.X, 0f, 1f);
         float Y = Math.Clamp((RelativeBoundsMin.Y - drawPosition.Y) / component.DrawSize.Y, 0f, 1f);
         float Width = Math.Clamp((RelativeBoundsMax.X - drawPosition.X) / component.DrawSize.X - X, 0f, 1f - X);
-        float Height = Math.Clamp((RelativeBoundsMax.Y - drawPosition.Y) / component.DrawSize.Y - Y, 0f, 1f - X);
+        float Height = Math.Clamp((RelativeBoundsMax.Y - drawPosition.Y) / component.DrawSize.Y - Y, 0f, 1f - Y);
         return new(X, Y, Width, Height);
     }
 
@@ -602,10 +602,12 @@ public class TextBox : IRenderableItem, IShadered, IColorMaskable, IEnumerable<T
 
                 FontRenderProperties Properties = new(Component.FontFamily, Component.IsBold,
                     Component.IsItalic, Component.LineSpacing, Component.CharSpacing);
+                RectangleF? ComponentDrawBounds = GetComponentDrawBounds(Component, ExpectedPosition);
+
                 renderer.DrawString(Properties,
                 Component.Text,
                 Position,
-                GetComponentDrawBounds(Component, ExpectedPosition),
+                ComponentDrawBounds,
                 ColorMask.CombinedMask,
                 Rotation,
                 RelativeComponentOrigin,
