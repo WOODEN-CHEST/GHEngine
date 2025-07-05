@@ -228,7 +228,10 @@ public class GHRenderer : IFrameRenderer
         float Width = Math.Max(Math.Min(MaxXClamped - MinXClamped, charTextureSize.X - MinXClamped), 0f);
         float Height = Math.Max(Math.Min(MaxYClamped - MinYClamped, charTextureSize.Y - MinYClamped), 0f);
 
-        return (new Rectangle((int)MinXClamped, (int)MinYClamped, (int)Width, (int)Height),
+        return (new Rectangle((int)MathF.Ceiling(MinXClamped),
+            (int)MathF.Ceiling(MinYClamped),
+            (int)MathF.Ceiling(Width),
+            (int)MathF.Ceiling(Height)),
             new Vector2(MinXClamped, MinYClamped) * textureScaling);
     }
 

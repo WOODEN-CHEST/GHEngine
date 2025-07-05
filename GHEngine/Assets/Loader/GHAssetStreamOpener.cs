@@ -15,16 +15,6 @@ public class GHAssetStreamOpener : IAssetStreamOpener
     public GHAssetStreamOpener() { }
 
 
-    // Methods.
-    public void SetAssetPaths(string[]? rootAssetPaths)
-    {
-        lock (_memoryAssetStreams)
-        {
-            _rootAssetPaths = rootAssetPaths?.ToArray() ?? Array.Empty<string>();
-        }
-    }
-
-
     // Private methods.
     private Stream OpenFileStream(string path)
     {
@@ -122,5 +112,13 @@ public class GHAssetStreamOpener : IAssetStreamOpener
     public bool DoesFileExist(string path)
     {
         return SelectAssetPath(path) != null;
+    }
+
+    public void SetAssetPaths(string[]? rootAssetPaths)
+    {
+        lock (_memoryAssetStreams)
+        {
+            _rootAssetPaths = rootAssetPaths?.ToArray() ?? Array.Empty<string>();
+        }
     }
 }

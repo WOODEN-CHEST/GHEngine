@@ -92,7 +92,7 @@ public class TestGame : Game
         {
             new TextComponent(FontFamily1, "Hello World!\nHelloj World 2\nHello World 3")
             {
-                FontSize = 0.25f,
+                FontSize = 0.05f,
                 Mask = Color.Red,
             },
         };

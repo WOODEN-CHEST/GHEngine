@@ -83,7 +83,7 @@ public class AnimationLoader : GHStreamAssetLoader
         }
         catch (Exception e)
         {
-            throw new AssetLoadException(definition, e.ToString());
+            throw new AssetLoadException(definition, $"Failed to load sprite animation frame: {e}");
         }
 
         return new GHSpriteAnimation(definition.FPS, definition.Step, definition.IsLooped, 
