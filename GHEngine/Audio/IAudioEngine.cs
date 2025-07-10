@@ -1,5 +1,4 @@
 ﻿using GHEngine.Audio.Source;
-using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHEngine.Audio;
 
-public interface IAudioEngine : IDisposable, ISampleProvider
+public interface IAudioEngine : IDisposable
 {
     // Fields.
     float Volume { get; set; }

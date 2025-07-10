@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GHEngine.Audio.Modifier;
-using NAudio.Wave;
 
 namespace GHEngine.Audio.Source;
 

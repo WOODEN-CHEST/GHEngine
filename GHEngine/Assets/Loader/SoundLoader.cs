@@ -1,6 +1,6 @@
 ﻿using GHEngine.Assets.Def;
+using GHEngine.Audio;
 using GHEngine.Audio.Source;
-using NAudio.Wave;
 using NVorbis;
 
 
@@ -84,7 +84,7 @@ public class SoundLoader : GHStreamAssetLoader
             using VorbisReader Reader = new(StreamOpener.GetStream(FullPath), false);
             float[] Samples = SampleAudio(Reader);
 
-            return new GHPreSampledSound(WaveFormat.CreateIeeeFloatWaveFormat(Reader.SampleRate, Reader.Channels), Samples);
+            return new GHPreSampledSound(new WaveFormat(Reader.SampleRate, Reader.Channels, sizeof(float) / 8), Samples);
         }
         catch (IOException e)
         {

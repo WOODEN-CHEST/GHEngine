@@ -48,7 +48,7 @@ public class TestGame : Game
     protected override void Initialize()
     {
         base.Initialize();
-        
+
         _userInput = new GHUserInput(Window, this);
 
         _display = new GHDisplay(_graphicsManager, Window);
@@ -67,57 +67,65 @@ public class TestGame : Game
         };
 
         GHAssetStreamOpener StreamOpener = new GHAssetStreamOpener();
-        StreamOpener.SetAssetPaths(new string[] { @"C:\Users\User\Desktop\test" });
+        StreamOpener.SetAssetPaths(new string[] { @"/home/wooden_chest/Desktop/assets" });
         IAssetDefinitionCollection AssetDefinitions = new GHAssetDefinitionCollection()
         {
-            new GHAnimationDefinition("image", new AssetPath[] { new("a", AssetPathType.FileSystem) },  0d, 0, null, false, false),
-            new GHFontDefinition("font1", AssetPath.File("font1")),
-            new GHFontDefinition("font2", AssetPath.File("font2")),
-            new GHSoundDefinition("bftd", AssetPath.File("bftd"))
+            new GHSoundDefinition("test", AssetPath.File("test"))
         };
+
+        GHAudioEngine Engine = new(5);
 
         GHGenericAssetLoader GenericLoader = new();
         GenericLoader.SetTypeLoader(AssetType.Animation, new AnimationLoader(StreamOpener, GraphicsDevice));
         GenericLoader.SetTypeLoader(AssetType.Font, new FontLoader(StreamOpener, GraphicsDevice));
+        GenericLoader.SetTypeLoader(AssetType.Sound, new SoundLoader(StreamOpener, Engine.WaveFormat));
         IAssetProvider Provider = new GHAssetProvider(GenericLoader, AssetDefinitions, null);
 
         _display.IsUserResizingAllowed = true;
         _userInput.IsMouseVisible = true;
 
-        GHFontFamily FontFamily1 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font1")!;
+        IPreSampledSound? Sound = Provider.GetAsset<IPreSampledSound>(_mainFrame, AssetType.Sound, "test")!;
+
+        IPreSampledSoundInstance SoundInstance = (IPreSampledSoundInstance)Sound.CreateInstance();
+        Engine.Start();
+        Engine.ScheduleAction(() => Engine.AddSoundInstance(SoundInstance));
+
+
+
+        //GHFontFamily FontFamily1 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font1")!;
         //GHFontFamily FontFamily2 = Provider.GetAsset<GHFontFamily>(_mainFrame, AssetType.Font, "font2")!;
 
 
-        WritableTextBox Text = new(_userInput)
-        {
-            new TextComponent(FontFamily1, "Hello World!\nHelloj World 2\nHello World 3")
-            {
-                FontSize = 0.05f,
-                Mask = Color.Red,
-            },
-        };
-        Text.IsFocused = true;
-        Text.Origin = new(0.5f);
-        Text.Position = new(0.5f);
-        Text.Rotation = 0f;
-        Text.Alignment = TextAlignOption.Left;
-        Text.IsTypingEnabled = true;
-        Text.Rotation = 0f;
+        // WritableTextBox Text = new(_userInput)
+        // {
+        //     new TextComponent(FontFamily1, "Hello World!\nHelloj World 2\nHello World 3")
+        //     {
+        //         FontSize = 0.05f,
+        //         Mask = Color.Red,
+        //     },
+        // };
+        // Text.IsFocused = true;
+        // Text.Origin = new(0.5f);
+        // Text.Position = new(0.5f);
+        // Text.Rotation = 0f;
+        // Text.Alignment = TextAlignOption.Left;
+        // Text.IsTypingEnabled = true;
+        // Text.Rotation = 0f;
         //Text.CursorBlinkDelay = TimeSpan.FromSeconds(1000d);
 
-        Text.Rotation = MathF.PI / 4f * 0f;
-        Text.IsFocusedBasedOnClicks = true;
-        Text.DrawBounds = new(0.1f, 0.1f, 0.8f, 1f);
+        // Text.Rotation = MathF.PI / 4f * 0f;
+        // Text.IsFocusedBasedOnClicks = true;
+        // Text.DrawBounds = new(0.1f, 0.1f, 0.8f, 1f);
 
-        _mainFrame.Layers[0].AddItem(Text);
+        //_mainFrame.Layers[0].AddItem(Text);
         //_mainFrame.Layers[0].AddItem(new TestStringBox() { Font = FontFamily1, Input = _userInput });
-        _updatables.Add(Text);
+        //_updatables.Add(Text);
         //_mainFrame.Layers[0].AddItem(new TestBox() { Family = FontFamily1 });
 
-        _display.FullScreenSize = _display.ScreenSize;
+        //_display.FullScreenSize = _display.ScreenSize;
 
-        _text = Text;
-        _font = FontFamily1;
+        //_text = Text;
+        //_font = FontFamily1;
     }
 
     protected override void BeginRun()

@@ -1,6 +1,4 @@
-﻿using NAudio.Dsp;
-using NAudio.Wave;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,46 +26,46 @@ public class BiQuadSoundModifier : ISoundModifier
     // Private fields.
     private float _frequency = 0;
     private WaveFormat? _previousFormat;
-    private BiQuadFilter[]? _previousFilters;
+    //private BiQuadFilter[]? _previousFilters;
 
 
 
     // Private methods.
-    private BiQuadFilter[] GetFilters(WaveFormat format)
-    {
-        BiQuadFilter[] Filters = new BiQuadFilter[format.Channels];
+    // private BiQuadFilter[] GetFilters(WaveFormat format)
+    // {
+    //     BiQuadFilter[] Filters = new BiQuadFilter[format.Channels];
 
-        for (int i = 0; i < Filters.Length; i++)
-        {
-            Filters[i] = PassType switch
-            {
-                BiQuadPassType.Low => BiQuadFilter.LowPassFilter(format.SampleRate, _frequency, FILTER_ORDER),
-                BiQuadPassType.High => BiQuadFilter.HighPassFilter(format.SampleRate, _frequency, FILTER_ORDER),
-                _ => throw new EnumValueException(nameof(PassType), PassType)
-            };
-        }
+    //     for (int i = 0; i < Filters.Length; i++)
+    //     {
+    //         Filters[i] = PassType switch
+    //         {
+    //             BiQuadPassType.Low => BiQuadFilter.LowPassFilter(format.SampleRate, _frequency, FILTER_ORDER),
+    //             BiQuadPassType.High => BiQuadFilter.HighPassFilter(format.SampleRate, _frequency, FILTER_ORDER),
+    //             _ => throw new EnumValueException(nameof(PassType), PassType)
+    //         };
+    //     }
 
-        return Filters;
-    }
+    //     return Filters;
+    // }
 
 
     // Inherited methods.
     public bool Modify(float[] buffer, int count, WaveFormat targetFormat)
     {
-        BiQuadFilter[] Filters = targetFormat.Equals(_previousFormat) ? _previousFilters! : GetFilters(targetFormat);
+        // BiQuadFilter[] Filters = targetFormat.Equals(_previousFormat) ? _previousFilters! : GetFilters(targetFormat);
 
-        int SamplesPerChannel = count / targetFormat.Channels;
-        for (int Index = 0; Index < SamplesPerChannel; Index++)
-        {
-            int BaseIndex = Index * targetFormat.Channels;
-            for (int SelectedChannel = 0; SelectedChannel < targetFormat.Channels; SelectedChannel++)
-            {
-                buffer[BaseIndex + SelectedChannel] = Filters[SelectedChannel].Transform(buffer[BaseIndex + SelectedChannel]);
-            }
-        }
+        // int SamplesPerChannel = count / targetFormat.Channels;
+        // for (int Index = 0; Index < SamplesPerChannel; Index++)
+        // {
+        //     int BaseIndex = Index * targetFormat.Channels;
+        //     for (int SelectedChannel = 0; SelectedChannel < targetFormat.Channels; SelectedChannel++)
+        //     {
+        //         buffer[BaseIndex + SelectedChannel] = Filters[SelectedChannel].Transform(buffer[BaseIndex + SelectedChannel]);
+        //     }
+        // }
 
-        _previousFormat = targetFormat;
-        _previousFilters = Filters;
+        // _previousFormat = targetFormat;
+        // _previousFilters = Filters;
         return false;
     }
 }
